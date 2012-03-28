@@ -2,6 +2,7 @@ package com.Title50;
 //package com.javacodegeeks.android.lbs;
 import android.app.Activity;
 import android.os.Bundle;
+import android.provider.Settings;
 
 import java.io.IOException;
 import java.util.List;
@@ -11,6 +12,7 @@ import android.location.Address;
 import android.location.Geocoder;
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -139,14 +141,14 @@ public class ShareMyLocationActivity extends Activity {
 	                    "New Location \n Longitude: %1$s \n Latitude: %2$s",
 	                    location.getLongitude(), location.getLatitude()
 	            );
-	            Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	            //Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
 	        }
 
 	        public void onStatusChanged(String s, int i, Bundle b) {
 	        	String message = String.format(
 	        			"Provider status changed"
 	            );
-	        	Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	        	//Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
 	        }
 
 	        public void onProviderDisabled(String s) {
@@ -154,13 +156,24 @@ public class ShareMyLocationActivity extends Activity {
 	        			"Provider disabled by the user. GPS turned off"
 	            );
 	        	Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	        	
+	        	//GPS is turned off
+	        	promptUserForGPS();
+	        	
 	        }
-
+	        
+	        public void promptUserForGPS() {
+	        	//TODO: User prompted to turn on GPS
+	        	
+	        	
+	        	Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
+	            startActivity(myIntent);
+	        }
 	        public void onProviderEnabled(String s) {
 	        	String message = String.format(
 	        			"Provider enabled by the user. GPS turned on"
 	            );
-	        	Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	        	//Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
 	        }
 
 	}
