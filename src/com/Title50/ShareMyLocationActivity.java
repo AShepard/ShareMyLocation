@@ -23,10 +23,13 @@ public class ShareMyLocationActivity extends Activity {
 
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	     
+	
 	protected LocationManager m_locationManager;
 	protected Geocoder m_geocoder;
+	
 	protected Button retrieveLocationButton;
 	protected Button endAppButton; 
+	
 	protected MyLocationListener locationListener;
 		 @Override
 		 public void onCreate(Bundle savedInstanceState) {
@@ -40,6 +43,7 @@ public class ShareMyLocationActivity extends Activity {
 	        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
 	        locationListener = new MyLocationListener();
+	        
 	        m_locationManager.requestLocationUpdates(
 	                LocationManager.GPS_PROVIDER,
 	                MINIMUM_TIME_BETWEEN_UPDATES,
@@ -112,7 +116,7 @@ public class ShareMyLocationActivity extends Activity {
 	            	 } catch (IOException e) {
 		            	  // TODO Auto-generated catch block
 		            	  e.printStackTrace();
-		            	  message = String.format("Canont get Address!");
+		            	  message = String.format("Cannot get Address!");
 	            	 }
 
 	            	 Toast.makeText(ShareMyLocationActivity.this, message,
@@ -139,20 +143,24 @@ public class ShareMyLocationActivity extends Activity {
 	        }
 
 	        public void onStatusChanged(String s, int i, Bundle b) {
-	            Toast.makeText(ShareMyLocationActivity.this, "Provider status changed",
-	                    Toast.LENGTH_LONG).show();
+	        	String message = String.format(
+	        			"Provider status changed"
+	            );
+	        	Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
 	        }
 
 	        public void onProviderDisabled(String s) {
-	            Toast.makeText(ShareMyLocationActivity.this,
-	                    "Provider disabled by the user. GPS turned off",
-	                    Toast.LENGTH_LONG).show();
+	        	String message = String.format(
+	        			"Provider disabled by the user. GPS turned off"
+	            );
+	        	Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
 	        }
 
 	        public void onProviderEnabled(String s) {
-	            Toast.makeText(ShareMyLocationActivity.this,
-	                    "Provider enabled by the user. GPS turned on",
-	                    Toast.LENGTH_LONG).show();
+	        	String message = String.format(
+	        			"Provider enabled by the user. GPS turned on"
+	            );
+	        	Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
 	        }
 
 	}
