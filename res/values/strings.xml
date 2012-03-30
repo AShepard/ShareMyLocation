@@ -3,5 +3,9 @@
 
     <string name="hello">Hello World, ShareMyLocationActivity!</string>
     <string name="app_name">ShareMyLocation</string>
-
+	<string-array name="gps_contextmenu">
+        <item>Edit</item>
+        <item>Delete</item>
+        <item>Send</item>
+    </string-array>
 </resources>

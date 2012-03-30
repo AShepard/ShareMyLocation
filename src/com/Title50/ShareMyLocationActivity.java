@@ -1,6 +1,8 @@
 package com.Title50;
 //package com.javacodegeeks.android.lbs;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.os.Bundle;
 import android.provider.Settings;
 
@@ -8,10 +10,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+
 import android.location.Address;
 import android.location.Geocoder;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
@@ -19,6 +23,7 @@ import android.location.LocationManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class ShareMyLocationActivity extends Activity {
@@ -32,6 +37,10 @@ public class ShareMyLocationActivity extends Activity {
 	protected Button retrieveLocationButton;
 	protected Button endAppButton; 
 	
+	protected View gpsContextMenu;
+	
+	final Context myContext = this;
+	
 	protected MyLocationListener locationListener;
 		 @Override
 		 public void onCreate(Bundle savedInstanceState) {
@@ -41,7 +50,7 @@ public class ShareMyLocationActivity extends Activity {
 
 	        retrieveLocationButton = (Button) findViewById(R.id.retrieve_location_button);
 	        endAppButton = (Button) findViewById(R.id.end_app_button);
-
+	        
 	        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
 	        locationListener = new MyLocationListener();
@@ -116,7 +125,6 @@ public class ShareMyLocationActivity extends Activity {
 	            		  message = String.format("No Address returned!");
 	            	  }
 	            	 } catch (IOException e) {
-		            	  // TODO Auto-generated catch block
 		            	  e.printStackTrace();
 		            	  message = String.format("Cannot get Address!");
 	            	 }
@@ -161,13 +169,33 @@ public class ShareMyLocationActivity extends Activity {
 	        	promptUserForGPS();
 	        	
 	        }
-	        
+    
 	        public void promptUserForGPS() {
 	        	//TODO: User prompted to turn on GPS
 	        	
+	        	/*
+	        	 * create dialogue for user to turn on GPS or skip to userform
+	        	 */
 	        	
-	        	Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
-	            startActivity(myIntent);
+	        	Context mContext = getApplicationContext();
+	        	AlertDialog.Builder builder = new AlertDialog.Builder(myContext);
+	        	builder.setMessage("GPS is disabled. Enable GPS?")
+	        	       .setCancelable(false)
+	        	       .setPositiveButton("Change GPS Settings", new DialogInterface.OnClickListener() {
+	        	           public void onClick(DialogInterface dialog, int id) {
+	        	        	   Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
+	        		           startActivity(myIntent);
+	        	           }
+	        	       })
+	        	       .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+	        	           public void onClick(DialogInterface dialog, int id) {
+	        	        	   shutdownApp();
+	        	           }
+	        	       });
+	        	AlertDialog dialog = builder.create();
+	        	dialog.show();
+	 
+	        	
 	        }
 	        public void onProviderEnabled(String s) {
 	        	String message = String.format(
