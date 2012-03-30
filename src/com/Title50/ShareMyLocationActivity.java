@@ -30,6 +30,7 @@ public class ShareMyLocationActivity extends Activity {
 
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	     
+	private static final int GPS_SETTINGS_ACTIVITY = 0;
 	
 	protected LocationManager m_locationManager;
 	protected Geocoder m_geocoder;
@@ -177,26 +178,34 @@ public class ShareMyLocationActivity extends Activity {
 	        	 * create dialogue for user to turn on GPS or skip to userform
 	        	 */
 	        	
-	        	Context mContext = getApplicationContext();
+	        	
 	        	AlertDialog.Builder builder = new AlertDialog.Builder(myContext);
 	        	builder.setMessage("GPS is disabled. Enable GPS?")
 	        	       .setCancelable(false)
 	        	       .setPositiveButton("Change GPS Settings", new DialogInterface.OnClickListener() {
 	        	           public void onClick(DialogInterface dialog, int id) {
+	        	        	  /*
+	        	        	   * User is directed to phone settings to turn on GPS
+	        	        	   */
 	        	        	   Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
-	        		           startActivity(myIntent);
+	        	        	   startActivity(myIntent);
+	        	        	   
 	        	           }
 	        	       })
 	        	       .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
 	        	           public void onClick(DialogInterface dialog, int id) {
 	        	        	   shutdownApp();
 	        	           }
+	        	           
 	        	       });
 	        	AlertDialog dialog = builder.create();
 	        	dialog.show();
-	 
+	        	
 	        	
 	        }
+
+
+	        
 	        public void onProviderEnabled(String s) {
 	        	String message = String.format(
 	        			"Provider enabled by the user. GPS turned on"
