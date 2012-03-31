@@ -94,7 +94,7 @@ public class ShareMyLocationActivity extends Activity {
 					 */
 					gps_tcp_client tcpClient = new gps_tcp_client();
 					tcpClient.sendData(0,0);
-					
+					tcpClient.closeComm();
 				}
 			});
 	    }   

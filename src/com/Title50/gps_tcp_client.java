@@ -70,4 +70,19 @@ public class gps_tcp_client {
 		}
 		return 0;
 	}
+	
+	public int closeComm() {
+		/*
+		 * closes socket/reader/writer
+		 * return error if it fails
+		 */
+		try {
+			m_socket.close();
+			m_server_put.close();
+			m_server_get.close();
+		} catch (Exception e) {
+			return 1;
+		}
+		return 0;
+	}
 }
