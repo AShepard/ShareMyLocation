@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -36,7 +37,8 @@ public class gps_tcp_client {
 		String to_server = "";
 		String from_server = "";
 		try{
-			m_socket = new Socket(m_server_name, m_port_number);
+			InetAddress serveraddress=InetAddress.getByName(m_server_name);
+			m_socket = new Socket(serveraddress, m_port_number);
 			m_server_put = new PrintWriter(m_socket.getOutputStream(), true);
 			m_server_get = new BufferedReader(new InputStreamReader(m_socket.getInputStream()));
 			

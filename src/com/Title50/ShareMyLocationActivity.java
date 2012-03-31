@@ -92,13 +92,29 @@ public class ShareMyLocationActivity extends Activity {
 					/*
 					 * Send tcp data
 					 */
-					gps_tcp_client tcpClient = new gps_tcp_client();
-					tcpClient.sendData(0,0);
-					tcpClient.closeComm();
+					connectToServer();
+					
 				}
 			});
 	    }   
 
+		protected void connectToServer() {
+			/*
+			 * Send tcp data
+			 */
+			int result=-1;
+			
+			gps_tcp_client tcpClient = new gps_tcp_client();
+			result = tcpClient.sendData(0,0);
+			
+			if(result==0) {
+				displayMessage("Data transfer successful!");
+			} else {
+				displayMessage("Could not connect to server!");
+			}
+			
+			tcpClient.closeComm();
+		}
 		protected void displayMessage(String message) {
 			if(message.length()<=0) {
 				return;
@@ -207,9 +223,9 @@ public class ShareMyLocationActivity extends Activity {
 	        	        	   
 	        	           }
 	        	       })
-	        	       .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+	        	       .setNegativeButton("Ignore", new DialogInterface.OnClickListener() {
 	        	           public void onClick(DialogInterface dialog, int id) {
-	        	        	   shutdownApp();
+	        	        	   //just dismiss dialog
 	        	           }
 	        	           
 	        	       });
