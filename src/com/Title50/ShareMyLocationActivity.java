@@ -38,6 +38,8 @@ public class ShareMyLocationActivity extends Activity {
 	protected Button retrieveLocationButton;
 	protected Button endAppButton; 
 	
+	protected Button sendTCPButton;
+	
 	protected View gpsContextMenu;
 	
 	final Context myContext = this;
@@ -51,8 +53,9 @@ public class ShareMyLocationActivity extends Activity {
 
 	        retrieveLocationButton = (Button) findViewById(R.id.retrieve_location_button);
 	        endAppButton = (Button) findViewById(R.id.end_app_button);
+	        sendTCPButton = (Button) findViewById(R.id.send_tcp_data);
 	        
-	        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+ 	        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
 	        locationListener = new MyLocationListener();
 	        
@@ -81,7 +84,19 @@ public class ShareMyLocationActivity extends Activity {
 				public void onClick(View v) {
 					shutdownApp();
 				}
-		}); 
+			}); 
+			
+			sendTCPButton.setOnClickListener(new OnClickListener() {
+
+				public void onClick(View v) {
+					/*
+					 * Send tcp data
+					 */
+					gps_tcp_client tcpClient = new gps_tcp_client();
+					tcpClient.sendData(0,0);
+					
+				}
+			});
 	    }   
 
 		protected void displayMessage(String message) {

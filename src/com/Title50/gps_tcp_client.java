@@ -9,8 +9,8 @@ import java.net.UnknownHostException;
 
 public class gps_tcp_client {
 	//TODO: insert real values
-	private static final int m_port_number = 1234;
-	private static final String m_server_name = "server";
+	private static final int m_port_number = 9999;
+	private static final String m_server_name = "192.168.0.106";
 	
 	private Socket m_socket;
 	private PrintWriter m_server_put;
@@ -33,7 +33,8 @@ public class gps_tcp_client {
 		/*
 		* Establish connection to server
 		*/
-		
+		String to_server = "";
+		String from_server = "";
 		try{
 			m_socket = new Socket(m_server_name, m_port_number);
 			m_server_put = new PrintWriter(m_socket.getOutputStream(), true);
@@ -46,14 +47,27 @@ public class gps_tcp_client {
 		}
 		
 		/*
+		 * TODO: change tcp data
 		 * Send Data
 		 */
-		
+		to_server = "Hello ANDROID";
+		try {
+			m_server_put.println(to_server + '\n');
+		  
+		} catch(Exception e) {
+			
+		}
 		
 		/*
 		 * Receive confirmation that data was received by server
 		 */
-		
+		try {
+			from_server = m_server_get.readLine();
+			System.out.println("FROM SERVER: " + from_server);
+			m_socket.close();
+		} catch (Exception e) {
+			
+		}
 		return 0;
 	}
 }
