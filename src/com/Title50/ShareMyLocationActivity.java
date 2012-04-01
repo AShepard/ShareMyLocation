@@ -1,5 +1,5 @@
 package com.Title50;
-//package com.javacodegeeks.android.lbs;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -23,106 +23,139 @@ import android.location.LocationManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+/*
+ * ----------------------------
+ * This is the main class for sharing location
+ * will send either GPS coordinates, address, or both with a server
+ * ----------------------------
+ *  This activity will capture GPS coordinates if available
+ *  Call activity to fill address form
+ *  Then send address to data server
+ */
 
 public class ShareMyLocationActivity extends Activity {
 
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	     
 	private static final int GPS_SETTINGS_ACTIVITY = 0;
+	private final Context MY_CONTEXT = this;
 	
 	protected LocationManager m_locationManager;
 	protected Geocoder m_geocoder;
 	
-	protected Button retrieveLocationButton;
-	protected Button endAppButton; 
+	protected Button b_retrieve_location;
+	protected Button b_end_app; 
+	protected Button b_send_data;
 	
-	protected Button sendTCPButton;
+	protected View v_gps_context_menu;
 	
-	protected View gpsContextMenu;
 	
-	final Context myContext = this;
+	/*
+	 * Strings/coordinates for address
+	 */
+	private double m_lat;
+	private double m_long;
 	
-	protected MyLocationListener locationListener;
-		 @Override
-		 public void onCreate(Bundle savedInstanceState) {
+	private String m_bldg_num;
+	private String m_street_name;
+	private String m_state;
+	private String m_city;
+	private String m_zip;
 
-	        super.onCreate(savedInstanceState);
-	        setContentView(R.layout.main);
+	
+	//location listener for GPS
+	protected MyLocationListener m_location_listener;
+	
+	 @Override
+	 public void onCreate(Bundle savedInstanceState) {
+		 
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
 
-	        retrieveLocationButton = (Button) findViewById(R.id.retrieve_location_button);
-	        endAppButton = (Button) findViewById(R.id.end_app_button);
-	        sendTCPButton = (Button) findViewById(R.id.send_tcp_data);
-	        
- 	        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        m_bldg_num = "";
+        m_street_name ="";
+        m_state ="";
+        m_city ="";
+        m_zip ="";
+        
+        b_retrieve_location = (Button) findViewById(R.id.retrieve_location_button);
+        b_end_app = (Button) findViewById(R.id.end_app_button);
+        b_send_data = (Button) findViewById(R.id.send_tcp_data);
+        
+        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-	        locationListener = new MyLocationListener();
-	        
-	        m_locationManager.requestLocationUpdates(
-	                LocationManager.GPS_PROVIDER,
-	                MINIMUM_TIME_BETWEEN_UPDATES,
-	                MINIMUM_DISTANCE_CHANGE_FOR_UPDATES,
-	                locationListener
-	        );
+        m_location_listener = new MyLocationListener();
+        
+        m_locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                MINIMUM_TIME_BETWEEN_UPDATES,
+                MINIMUM_DISTANCE_CHANGE_FOR_UPDATES,
+                m_location_listener
+        );
 
-	        m_geocoder = new Geocoder(this, Locale.ENGLISH);
+        m_geocoder = new Geocoder(this, Locale.ENGLISH);
 
-	        /*
-	         * Button on click listeners
-	         */
-			retrieveLocationButton.setOnClickListener(new OnClickListener() {
-
-					public void onClick(View v) {
-						showCurrentLocation();
-
-					}
-			});       
-
-			endAppButton.setOnClickListener(new OnClickListener() {
+        /*
+         * Button on click listeners
+         */
+		b_retrieve_location.setOnClickListener(new OnClickListener() {
 
 				public void onClick(View v) {
-					shutdownApp();
-				}
-			}); 
-			
-			sendTCPButton.setOnClickListener(new OnClickListener() {
+					showCurrentLocation();
 
-				public void onClick(View v) {
-					/*
-					 * Send tcp data
-					 */
-					connectToServer();
-					
 				}
-			});
-	    }   
+		});       
 
-		protected void connectToServer() {
-			/*
-			 * Send tcp data
-			 */
-			int result=-1;
-			
-			gps_tcp_client tcpClient = new gps_tcp_client();
-			result = tcpClient.sendData(0,0);
-			
-			if(result==0) {
-				displayMessage("Data transfer successful!");
-			} else {
-				displayMessage("Could not connect to server!");
+		b_end_app.setOnClickListener(new OnClickListener() {
+
+			public void onClick(View v) {
+				shutdownApp();
 			}
-			
-			tcpClient.closeComm();
-		}
-		protected void displayMessage(String message) {
-			if(message.length()<=0) {
-				return;
+		}); 
+		
+		b_send_data.setOnClickListener(new OnClickListener() {
+
+			public void onClick(View v) {
+				/*
+				 * Send tcp data
+				 */
+				connectToServer();
+				
 			}
-			Toast.makeText(ShareMyLocationActivity.this, message,
-                  Toast.LENGTH_LONG).show();
+		});
+    }   
+
+	//-------------------------------------------------------------------
+	// Send data to server
+	//-------------------------------------------------------------------
+	protected void connectToServer() {
+		/*
+		 * Send tcp data
+		 */
+		int result=-1;
+		
+		gps_tcp_client tcpClient = new gps_tcp_client();
+		result = tcpClient.sendData(0,0);
+		
+		if(result==0) {
+			displayMessage("Data transfer successful!");
+		} else if(result==2) {
+			displayMessage("Server is not reachable!");
+		} else {
+			displayMessage("Could not connect to server!");
 		}
-	    protected void showCurrentLocation() {
+		
+		tcpClient.closeComm();
+	}
+	
+//-------------------------------------------------------------------
+//Translate latitude/longitude to street address then populate form
+//-------------------------------------------------------------------		
+    protected void showCurrentLocation() {
 
 	        Location location = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
@@ -132,8 +165,8 @@ public class ShareMyLocationActivity extends Activity {
 	                    "Current Location \n Longitude: %1$s \n Latitude: %2$s",
 	                    location.getLongitude(), location.getLatitude()
 	            );
-	            Toast.makeText(ShareMyLocationActivity.this, message,
-	                    Toast.LENGTH_LONG).show();
+	            displayMessage(message);
+	            
 
 	            try {
 	            	  double longitude= location.getLongitude();
@@ -161,19 +194,19 @@ public class ShareMyLocationActivity extends Activity {
 		            	  message = String.format("Cannot get Address!");
 	            	 }
 
-	            	 Toast.makeText(ShareMyLocationActivity.this, message,
-	 	                    Toast.LENGTH_LONG).show();
+	            	 displayMessage(message);
 	        	}
-
 	    }  
-
-
-	    public void shutdownApp() {
-			m_locationManager.removeUpdates(locationListener);
-
-			this.finish();
+ //-------------------------------------------------------------------
+ //Insert values into form if they exist, allow user to modify
+ //-------------------------------------------------------------------
+	    protected void fillAddressForm() {
+	    	//call activity to do this
+	    	
 	    }
-
+ //-------------------------------------------------------------------
+ // Listener functions for GPS
+ //-------------------------------------------------------------------
 	    private class MyLocationListener implements LocationListener {
 
 	        public void onLocationChanged(Location location) {
@@ -181,21 +214,21 @@ public class ShareMyLocationActivity extends Activity {
 	                    "New Location \n Longitude: %1$s \n Latitude: %2$s",
 	                    location.getLongitude(), location.getLatitude()
 	            );
-	            //Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	           // displayMessage(message);
 	        }
 
 	        public void onStatusChanged(String s, int i, Bundle b) {
 	        	String message = String.format(
 	        			"Provider status changed"
 	            );
-	        	//Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	        	//displayMessage(message);
 	        }
 
 	        public void onProviderDisabled(String s) {
 	        	String message = String.format(
 	        			"Provider disabled by the user. GPS turned off"
 	            );
-	        	Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	        	//displayMessage(message);
 	        	
 	        	//GPS is turned off
 	        	promptUserForGPS();
@@ -203,14 +236,11 @@ public class ShareMyLocationActivity extends Activity {
 	        }
     
 	        public void promptUserForGPS() {
-	        	//TODO: User prompted to turn on GPS
-	        	
-	        	/*
-	        	 * create dialogue for user to turn on GPS or skip to userform
-	        	 */
-	        	
-	        	
-	        	AlertDialog.Builder builder = new AlertDialog.Builder(myContext);
+        	/*
+        	 * create dialogue for user to turn on GPS or skip to userform
+        	 */
+
+	        	AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
 	        	builder.setMessage("GPS is disabled. Enable GPS?")
 	        	       .setCancelable(false)
 	        	       .setPositiveButton("Change GPS Settings", new DialogInterface.OnClickListener() {
@@ -229,21 +259,31 @@ public class ShareMyLocationActivity extends Activity {
 	        	           }
 	        	           
 	        	       });
+	        	
 	        	AlertDialog dialog = builder.create();
-	        	dialog.show();
-	        	
-	        	
+	        	dialog.show();   	
 	        }
-
-
 	        
 	        public void onProviderEnabled(String s) {
 	        	String message = String.format(
 	        			"Provider enabled by the user. GPS turned on"
 	            );
-	        	//Toast.makeText(ShareMyLocationActivity.this, message, Toast.LENGTH_LONG).show();
+	        	//displayMessage(message);
 	        }
-
+	 
 	}
+	    
+    protected void displayMessage(String message) {
+		if(message.length()<=0) {
+			return;
+		}
+		Toast.makeText(ShareMyLocationActivity.this, message,
+              Toast.LENGTH_LONG).show();
+	}
+	    
+    public void shutdownApp() {
+		m_locationManager.removeUpdates(m_location_listener);
 
+		this.finish();
+    }
 }

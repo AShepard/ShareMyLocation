@@ -38,7 +38,10 @@ public class gps_tcp_client {
 		String from_server = "";
 		try{
 			InetAddress serveraddress=InetAddress.getByName(m_server_name);
-			m_socket = new Socket(serveraddress, m_port_number);
+			if(serveraddress.isReachable(10000)==false) {
+				return 2;
+			}
+			m_socket = new Socket(m_server_name, m_port_number);
 			m_server_put = new PrintWriter(m_socket.getOutputStream(), true);
 			m_server_get = new BufferedReader(new InputStreamReader(m_socket.getInputStream()));
 			
