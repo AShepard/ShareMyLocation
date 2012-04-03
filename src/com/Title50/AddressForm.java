@@ -19,23 +19,33 @@ public class AddressForm extends Activity{
 	private double m_long;
 	
 	private String m_bldg_num;
-	private String m_street_name;
+	private String m_street;
 	private String m_state;
 	private String m_city;
 	private String m_zip;
 	
 	private EditText et_bldg_num;
-	private EditText et_street_name;
-	private EditText et_state;
+	private EditText et_street;
 	private EditText et_city;
+	private EditText et_state;
 	private EditText et_zip;
 	
 	@Override
 	 public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-        et_state = (EditText) findViewById(R.id.et_State);
-        et_zip = (EditText) findViewById(R.id.et_street);
+        setContentView(R.layout.address_editor);
+        
+        /*
+         * Objects referencing the Edit Text fields 
+         * to set up listeners/insert data into them
+         */
+        et_bldg_num = (EditText) findViewById(R.id.et_bldg_num);
+        et_street = (EditText) findViewById(R.id.et_street);
+        et_city = (EditText) findViewById(R.id.et_city);
+        et_state = (EditText) findViewById(R.id.et_state);
+        et_zip = (EditText) findViewById(R.id.et_city);
+        
+        
 		Bundle extras = getIntent().getExtras(); 
 		if(extras !=null) {
 		   // m_city = extras.getString(ADDR_CITY);
