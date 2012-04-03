@@ -5,7 +5,13 @@ import android.os.Bundle;
 import android.widget.EditText;
 
 public class AddressForm extends Activity{
-	
+	//keys for recieving extra data
+	private final String ADDR_STREET = "STREET_KEY";
+	private final String ADDR_CITY = "CITY_KEY";
+	private final String ADDR_STATE = "STATE_KEY";
+	private final String ADDR_ZIP = "ZIP_KEY";
+	private final String ADDR_LONG = "LONG_KEY";
+	private final String ADDR_LAT ="LAT_KEY";
 	/*
 	 * Strings/EditText/coordinates for address
 	 */
@@ -26,6 +32,29 @@ public class AddressForm extends Activity{
 	
 	@Override
 	 public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        et_state = (EditText) findViewById(R.id.et_State);
+        et_zip = (EditText) findViewById(R.id.et_street);
+		Bundle extras = getIntent().getExtras(); 
+		if(extras !=null) {
+		   // m_city = extras.getString(ADDR_CITY);
+		    m_state = extras.getString(ADDR_STATE);
+		    m_zip = extras.getString(ADDR_ZIP);
+		}
+		
+		if(m_state!="") {
+			et_state.setText(m_state);	
+		} else {
+			et_state.setText("No state entered");
+		}
+		
+		if(m_zip!="") {
+			et_zip.setText(m_zip);	
+		} else {
+			et_zip.setText("No zip entered");
+		}
+		
 		
 	}
 }

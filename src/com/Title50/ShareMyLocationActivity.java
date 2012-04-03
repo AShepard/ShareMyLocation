@@ -38,7 +38,13 @@ import android.widget.Toast;
  */
 
 public class ShareMyLocationActivity extends Activity {
-
+	private final String ADDR_STREET = "STREET_KEY";
+	private final String ADDR_CITY = "CITY_KEY";
+	private final String ADDR_STATE = "STATE_KEY";
+	private final String ADDR_ZIP = "ZIP_KEY";
+	private final String ADDR_LONG = "LONG_KEY";
+	private final String ADDR_LAT ="LAT_KEY";
+	
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	     
 	private static final int GPS_SETTINGS_ACTIVITY = 0;
@@ -82,6 +88,7 @@ public class ShareMyLocationActivity extends Activity {
         m_city ="";
         m_zip ="";
         
+        //TODO Remove buttons (new layout to come)
         b_retrieve_location = (Button) findViewById(R.id.retrieve_location_button);
         b_end_app = (Button) findViewById(R.id.end_app_button);
         b_send_data = (Button) findViewById(R.id.send_tcp_data);
@@ -105,8 +112,12 @@ public class ShareMyLocationActivity extends Activity {
 		b_retrieve_location.setOnClickListener(new OnClickListener() {
 
 				public void onClick(View v) {
-					showCurrentLocation();
-
+					/*TODO Move
+					 * Attempt to get current address/GPS location
+					 */
+					//showCurrentLocation();
+					launchAddressForm();
+					
 				}
 		});       
 
@@ -120,20 +131,38 @@ public class ShareMyLocationActivity extends Activity {
 		b_send_data.setOnClickListener(new OnClickListener() {
 
 			public void onClick(View v) {
-				/*
+				/*TODO Remove
 				 * Send tcp data
 				 */
 				connectToServer();
 				
 			}
 		});
-    }   
+    }  
+	 
+	 //-------------------------------------------------------------------
+	 //Insert values into form if they exist, allow user to modify
+	 //-------------------------------------------------------------------
 
+	protected void launchAddressForm() {
+		/*
+		 * Pass args to activity
+		 * start activity (not for result, this will end current app)
+		 */
+		Intent intent = new Intent(getBaseContext(), AddressForm.class);
+		//Create the bundle
+		Bundle bundle = new Bundle();
+		bundle.putString(ADDR_STATE, "CaliforniaJSKS");
+		bundle.putString( ADDR_ZIP, "My zip: 93117");
+		
+		intent.putExtras(bundle);
+		startActivity(intent);
+	}
 	//-------------------------------------------------------------------
 	// Send data to server
 	//-------------------------------------------------------------------
 	protected void connectToServer() {
-		/*
+		/*TODO Remove
 		 * Send tcp data
 		 */
 		int result=-1;
@@ -197,13 +226,7 @@ public class ShareMyLocationActivity extends Activity {
 	            	 displayMessage(message);
 	        	}
 	    }  
- //-------------------------------------------------------------------
- //Insert values into form if they exist, allow user to modify
- //-------------------------------------------------------------------
-	    protected void fillAddressForm() {
-	    	//call activity to do this
-	    	
-	    }
+
  //-------------------------------------------------------------------
  // Listener functions for GPS
  //-------------------------------------------------------------------
