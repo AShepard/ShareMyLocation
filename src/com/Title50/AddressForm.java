@@ -27,6 +27,5 @@ public class AddressForm extends Activity{
 	@Override
 	 public void onCreate(Bundle savedInstanceState) {
 		
-		
 	}
 }
