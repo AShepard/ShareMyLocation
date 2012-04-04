@@ -86,6 +86,7 @@ public class ShareMyLocationActivity extends Activity {
 	private EditText et_state;
 	private EditText et_zip;
 	
+	private Button b_exit;
 	//location listener for GPS
 	protected MyLocationListener m_location_listener;
 	
@@ -331,6 +332,8 @@ public class ShareMyLocationActivity extends Activity {
         et_state = (EditText) findViewById(R.id.et_state);
         et_zip = (EditText) findViewById(R.id.et_zip);
         
+        b_exit = (Button) findViewById(R.id.b_exit);
+        
         /*
          * Fill in with address fields (if available on a per field basis)
          */
@@ -344,6 +347,13 @@ public class ShareMyLocationActivity extends Activity {
         et_state.setText(m_state);
         et_zip.setText(m_zip);
 		
+        b_exit.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				shutdownApp();
+			}
+        });
 		/*
 		 * TODO: Remove below
 		 

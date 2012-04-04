@@ -56,15 +56,26 @@
         android:layout_width="180dp"
         android:layout_height="wrap_content"
         android:ems="10" />
+
     <TextView
         android:id="@+id/tv_zip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Zip" />
+
     <EditText
         android:id="@+id/et_zip"
         android:layout_width="180dp"
         android:layout_height="wrap_content"
-        android:ems="10" />
+        android:ems="10" >
+
+        <requestFocus />
+    </EditText>
+
+    <Button
+        android:id="@+id/b_exit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Exit" />
 
 </LinearLayout>
