@@ -46,6 +46,9 @@ public class ShareMyLocationActivity extends Activity {
 	private final String ADDR_LONG = "LONG_KEY";
 	private final String ADDR_LAT ="LAT_KEY";
 	
+	private final double WAIT_LIMIT = 3.00;
+	
+	
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	     
 	private static final int GPS_SETTINGS_ACTIVITY = 0;
@@ -86,6 +89,8 @@ public class ShareMyLocationActivity extends Activity {
 	//location listener for GPS
 	protected MyLocationListener m_location_listener;
 	
+	private boolean m_gps_enabled;
+	private boolean m_wait_for_gps;
 	/*
 	 * First function called! 
 	 * Will display loading screen while determining if GPS available
@@ -96,7 +101,7 @@ public class ShareMyLocationActivity extends Activity {
 	 public void onCreate(Bundle savedInstanceState) {
 		 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        setContentView(R.layout.loading_screen);
 
         /*
          * Initialize address fields to null (or out of range)
@@ -110,12 +115,14 @@ public class ShareMyLocationActivity extends Activity {
         m_long_str = "";
         m_latitude = -99999;
         m_longitude= -99999;
-        
+        m_gps_enabled = false;
+        m_wait_for_gps= false;
+        /*
         //TODO Remove buttons (new layout to come)
         b_retrieve_location = (Button) findViewById(R.id.retrieve_location_button);
         b_end_app = (Button) findViewById(R.id.end_app_button);
         b_send_data = (Button) findViewById(R.id.send_tcp_data);
-        
+        */
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         m_location_listener = new MyLocationListener();
@@ -129,21 +136,30 @@ public class ShareMyLocationActivity extends Activity {
 
         m_geocoder = new Geocoder(this, Locale.ENGLISH);
 
+        if(m_locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER )) {
+        	getCurrentLocation();
+        	launchAddressForm();
+        }
+        /*
+         * Will get address when a GPS provider is supplied
+         * If not supplied, then need to turn on or skip
+         *   if need to turn on, then wait x seconds for it to be recognized
+         */
+        
         /*
          * Button on click listeners
          */
+        /* TODO REMOVE on ClickListeners
 		b_retrieve_location.setOnClickListener(new OnClickListener() {
 
 				public void onClick(View v) {
-					/*TODO Move
-					 * Attempt to get current address/GPS location
-					 */
-					//showCurrentLocation();
+					
 					launchAddressForm();
 					
 				}
 		});       
 
+		
 		b_end_app.setOnClickListener(new OnClickListener() {
 
 			public void onClick(View v) {
@@ -154,13 +170,12 @@ public class ShareMyLocationActivity extends Activity {
 		b_send_data.setOnClickListener(new OnClickListener() {
 
 			public void onClick(View v) {
-				/*TODO Remove
-				 * Send tcp data
-				 */
+
 				connectToServer();
 				
 			}
 		});
+		*/
     }  
 	 
 	//-------------------------------------------------------------------
@@ -189,7 +204,7 @@ public class ShareMyLocationActivity extends Activity {
 //-------------------------------------------------------------------
 //Translate latitude/longitude to street address then populate form
 //-------------------------------------------------------------------		
-    protected void showCurrentLocation() {
+    protected void getCurrentLocation() {
 
         Location location = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
@@ -199,7 +214,7 @@ public class ShareMyLocationActivity extends Activity {
                     "Current Location \n Longitude: %1$s \n Latitude: %2$s",
                     location.getLongitude(), location.getLatitude()
             );
-            displayMessage(message);
+            //displayMessage(message);
             
 
             try {
@@ -217,7 +232,29 @@ public class ShareMyLocationActivity extends Activity {
 					   for(int i=0; i<returnedAddress.getMaxAddressLineIndex(); i++) {
 						   strReturnedAddress.append(returnedAddress.getAddressLine(i)).append("\n");
 					   }
+					   
+					   /*
+					    * Populate address members
+					    * Number and Street
+					    * City, State, Zip
 
+					    */
+					   String temp = "";
+					   //zip
+					   m_zip = returnedAddress.getPostalCode();
+					   //state
+					   m_state = returnedAddress.getAdminArea();
+					   //city
+					   m_city = returnedAddress.getLocality();
+					   //building num
+					   m_bldg_num = returnedAddress.getSubThoroughfare();
+					   //street
+					   m_street = returnedAddress.getThoroughfare();
+					  
+					   
+
+					  // m_street = returnedAddress.getLocality();
+					  // m_city = returnedAddress.getSubLocality();
 					   message = String.format("Addr: %s", strReturnedAddress.toString());
             	  }
             	  else{
@@ -239,28 +276,49 @@ public class ShareMyLocationActivity extends Activity {
 		 * Pass args to activity
 		 * start activity (not for result, this will end current app)
 		 */
+		/* TODO: remove
 		m_bldg_num = "Bldg num";
         m_street ="Street";
         m_state ="State";
         m_city ="City";
         m_zip ="Zip";
-       
+        m_latitude = -5;
+        m_longitude = 12;
+       */
+		
+		/*
+		 * if below strings are null, then insert blanks
+		 */
+        if(m_bldg_num == null) {
+        	m_bldg_num = "";
+        }
+        if(m_street == null) {
+        	m_street = "";
+        }
+        if(m_city == null) {
+        	m_city = "";
+        }
+        if(m_state == null) {
+        	m_state = "";
+        }
+        if(m_zip == null) {
+        	m_zip = "";
+        }
+         
+         if(m_latitude<=90 && m_latitude >=-90) {
+         	m_lat_str = String.format("Latitude: %1$s", m_latitude);
+         } else {
+         	m_lat_str = String.format("Latitude: unknown");
+         }
+         if(m_longitude<=90 && m_longitude >=-90) {
+         	m_long_str = String.format("Longitude: %1$s", m_longitude);
+         } else {
+         	m_long_str = String.format("Longitude: unknown");
+         }
+         
         //Change layout to the address form
         setContentView(R.layout.address_editor);
-		
-       // m_latitude = -5;
-       // m_longitude = 12;
-        
-        if(m_latitude<=90 && m_latitude >=-90) {
-        	m_lat_str = String.format("Latitude: %1$s", m_latitude);
-        } else {
-        	m_lat_str = String.format("Latitude: unknown");
-        }
-        if(m_longitude<=90 && m_longitude >=-90) {
-        	m_long_str = String.format("Longitude: %1$s", m_longitude);
-        } else {
-        	m_long_str = String.format("Longitude: unknown");
-        }
+	   
         /*
          * Get the EditTexts and needed TextViews from address form
          */
@@ -326,6 +384,7 @@ public class ShareMyLocationActivity extends Activity {
         }
 
         public void onProviderDisabled(String s) {
+        	m_gps_enabled = false;
         	String message = String.format(
         			"Provider disabled by the user. GPS turned off"
             );
@@ -333,6 +392,11 @@ public class ShareMyLocationActivity extends Activity {
         	
         	//GPS is turned off
         	promptUserForGPS();
+        	
+        	//check to see if GPS turned on again for 3 seconds
+        	double waitTime = 0;        	
+        	m_wait_for_gps = false;	
+        	
         	
         }
 
@@ -351,25 +415,32 @@ public class ShareMyLocationActivity extends Activity {
         	        	   */
         	        	   Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
         	        	   startActivity(myIntent);
-        	        	   
+        	        	   m_wait_for_gps = false;
+        	        	   getCurrentLocation();
+        	        	   launchAddressForm();
         	           }
         	       })
         	       .setNegativeButton("Ignore", new DialogInterface.OnClickListener() {
         	           public void onClick(DialogInterface dialog, int id) {
         	        	   //just dismiss dialog
+        	        	   m_wait_for_gps = false;
+        	        	   launchAddressForm();
         	           }
         	           
         	       });
         	
         	AlertDialog dialog = builder.create();
+        	m_wait_for_gps=true;
         	dialog.show();   	
         }
         
         public void onProviderEnabled(String s) {
+        	m_gps_enabled = true;
         	String message = String.format(
         			"Provider enabled by the user. GPS turned on"
             );
-        	//displayMessage(message);
+        	displayMessage(message);
+        	getCurrentLocation();
         }
 	 
 	}
