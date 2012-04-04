@@ -38,6 +38,7 @@ import android.widget.Toast;
  */
 
 public class ShareMyLocationActivity extends Activity {
+	//TODO REMOEV
 	private final String ADDR_BUILDING = "BUILDING_KEY";
 	private final String ADDR_STREET = "STREET_KEY";
 	private final String ADDR_CITY = "CITY_KEY";
@@ -45,13 +46,13 @@ public class ShareMyLocationActivity extends Activity {
 	private final String ADDR_ZIP = "ZIP_KEY";
 	private final String ADDR_LONG = "LONG_KEY";
 	private final String ADDR_LAT ="LAT_KEY";
+	private static final int GPS_SETTINGS_ACTIVITY = 0;
 	
-	private final double WAIT_LIMIT = 3.00;
+	private final int SETTINGS_ACTIVITY_KEY = 13683;
 	
 	
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
-	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	     
-	private static final int GPS_SETTINGS_ACTIVITY = 0;
+	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	 
 	private final Context MY_CONTEXT = this;
 	
 	protected LocationManager m_locationManager;
@@ -136,76 +137,73 @@ public class ShareMyLocationActivity extends Activity {
         );
 
         m_geocoder = new Geocoder(this, Locale.ENGLISH);
-
-        if(m_locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER )) {
-        	getCurrentLocation();
-        	launchAddressForm();
-        }
-        /*
-         * Will get address when a GPS provider is supplied
-         * If not supplied, then need to turn on or skip
-         *   if need to turn on, then wait x seconds for it to be recognized
-         */
         
         /*
-         * Button on click listeners
+         * Determine if GPS enabled: perform getLocation/addressform/alertdialog
          */
-        /* TODO REMOVE on ClickListeners
-		b_retrieve_location.setOnClickListener(new OnClickListener() {
-
-				public void onClick(View v) {
-					
-					launchAddressForm();
-					
-				}
-		});       
-
-		
-		b_end_app.setOnClickListener(new OnClickListener() {
-
-			public void onClick(View v) {
-				shutdownApp();
-			}
-		}); 
-		
-		b_send_data.setOnClickListener(new OnClickListener() {
-
-			public void onClick(View v) {
-
-				connectToServer();
-				
-			}
-		});
-		*/
-    }  
+        checkGpsStatus(true);
+        
+	 }  
+	
+	 @Override
+	 protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		 switch(requestCode) {
+			 case SETTINGS_ACTIVITY_KEY:
+				 	checkGpsStatus(false);
+				 	break;
+			 default:
+				 	//UNKNOWN Activity started
+				 	break;
+		 }
+	 }
 	 
-	//-------------------------------------------------------------------
-	// Send data to server
-	//-------------------------------------------------------------------
-	protected void connectToServer() {
-		/*TODO Remove
-		 * Send tcp data
-		 */
-		int result=-1;
-		
-		gps_tcp_client tcpClient = new gps_tcp_client();
-		result = tcpClient.sendData(0,0);
-		
-		if(result==0) {
-			displayMessage("Data transfer successful!");
-		} else if(result==2) {
-			displayMessage("Server is not reachable!");
-		} else {
-			displayMessage("Could not connect to server!");
-		}
-		
-		tcpClient.closeComm();
-	}
+	 private void checkGpsStatus(boolean runDialog) {
+		 if(m_locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER )) {
+			 getCurrentLocation();
+	         launchAddressForm();
+		 } else {
+			 if(runDialog) {
+				 promptUserForGPS();
+			 } else {
+				 launchAddressForm();
+			 }
+		 }
+	 }
+	 
+	 private void promptUserForGPS() {
+	    	/*
+	    	 * create dialogue for user to turn on GPS or skip to userform
+	    	 */
+
+	        	AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
+	        	builder.setMessage("GPS is disabled. Enable GPS?")
+	        	       .setCancelable(false)
+	        	       .setPositiveButton("Change GPS Settings", new DialogInterface.OnClickListener() {
+	        	           public void onClick(DialogInterface dialog, int id) {
+	        	        	  /*
+	        	        	   * User is directed to phone settings to turn on GPS
+	        	        	   */
+	        	        	   Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
+	        	        	   startActivityForResult(myIntent, SETTINGS_ACTIVITY_KEY);
+	        	           }
+	        	       })
+	        	       .setNegativeButton("Ignore", new DialogInterface.OnClickListener() {
+	        	           public void onClick(DialogInterface dialog, int id) {
+	        	        	   //just dismiss dialog
+	        	        	   launchAddressForm();
+	        	           }
+	        	           
+	        	       });
+	        	
+	        	AlertDialog dialog = builder.create();
+	        	m_wait_for_gps=true;
+	        	dialog.show();   	
+	        }
 	
 //-------------------------------------------------------------------
 //Translate latitude/longitude to street address then populate form
 //-------------------------------------------------------------------		
-    protected void getCurrentLocation() {
+	 protected void getCurrentLocation() {
 
         Location location = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
@@ -354,22 +352,7 @@ public class ShareMyLocationActivity extends Activity {
 				shutdownApp();
 			}
         });
-		/*
-		 * TODO: Remove below
-		 
-		Intent intent = new Intent(getBaseContext(), AddressForm.class);
-		//Create the bundle by passing in values associated with a Key
-		Bundle bundle = new Bundle();
 		
-		bundle.putString(ADDR_BUILDING, m_bldg_num);
-		bundle.putString(ADDR_STREET, m_street);
-		bundle.putString(ADDR_CITY, m_state);
-		bundle.putString(ADDR_STATE, m_city);
-		bundle.putString(ADDR_ZIP, m_zip);
-		
-		intent.putExtras(bundle);
-		startActivity(intent);
-		*/
 	}
 	
 	
@@ -399,58 +382,17 @@ public class ShareMyLocationActivity extends Activity {
         			"Provider disabled by the user. GPS turned off"
             );
         	//displayMessage(message);
-        	
-        	//GPS is turned off
-        	promptUserForGPS();
-        	
-        	//check to see if GPS turned on again for 3 seconds
-        	double waitTime = 0;        	
-        	m_wait_for_gps = false;	
-        	
-        	
         }
 
-        public void promptUserForGPS() {
-    	/*
-    	 * create dialogue for user to turn on GPS or skip to userform
-    	 */
-
-        	AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
-        	builder.setMessage("GPS is disabled. Enable GPS?")
-        	       .setCancelable(false)
-        	       .setPositiveButton("Change GPS Settings", new DialogInterface.OnClickListener() {
-        	           public void onClick(DialogInterface dialog, int id) {
-        	        	  /*
-        	        	   * User is directed to phone settings to turn on GPS
-        	        	   */
-        	        	   Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
-        	        	   startActivity(myIntent);
-        	        	   m_wait_for_gps = false;
-        	        	   getCurrentLocation();
-        	        	   launchAddressForm();
-        	           }
-        	       })
-        	       .setNegativeButton("Ignore", new DialogInterface.OnClickListener() {
-        	           public void onClick(DialogInterface dialog, int id) {
-        	        	   //just dismiss dialog
-        	        	   m_wait_for_gps = false;
-        	        	   launchAddressForm();
-        	           }
-        	           
-        	       });
-        	
-        	AlertDialog dialog = builder.create();
-        	m_wait_for_gps=true;
-        	dialog.show();   	
-        }
+        
         
         public void onProviderEnabled(String s) {
         	m_gps_enabled = true;
         	String message = String.format(
         			"Provider enabled by the user. GPS turned on"
             );
-        	displayMessage(message);
-        	getCurrentLocation();
+        	//displayMessage(message);
+        	//getCurrentLocation();
         }
 	 
 	}
