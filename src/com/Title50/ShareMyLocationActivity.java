@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-
 import android.location.Address;
 import android.location.Geocoder;
 
@@ -38,7 +37,7 @@ import android.widget.Toast;
  */
 
 public class ShareMyLocationActivity extends Activity {
-	//TODO REMOEV
+	//These are keys relating to email and location settings activites
 	private final String ADDR_BUILDING = "BUILDING_KEY";
 	private final String ADDR_STREET = "STREET_KEY";
 	private final String ADDR_CITY = "CITY_KEY";
@@ -46,7 +45,9 @@ public class ShareMyLocationActivity extends Activity {
 	private final String ADDR_ZIP = "ZIP_KEY";
 	private final String ADDR_LONG = "LONG_KEY";
 	private final String ADDR_LAT ="LAT_KEY";
-	private static final int GPS_SETTINGS_ACTIVITY = 0;
+	
+	private final String EMAIL_ADDR = "asdantius5@gmail.com";
+	private static final int EMAIL_ACTIVITY_KEY = 51212;
 	
 	private final int SETTINGS_ACTIVITY_KEY = 13683;
 	
@@ -88,6 +89,7 @@ public class ShareMyLocationActivity extends Activity {
 	private EditText et_zip;
 	
 	private Button b_exit;
+	private Button b_send_email;
 	//location listener for GPS
 	protected MyLocationListener m_location_listener;
 	
@@ -151,6 +153,14 @@ public class ShareMyLocationActivity extends Activity {
 			 case SETTINGS_ACTIVITY_KEY:
 				 	checkGpsStatus(false);
 				 	break;
+			 case EMAIL_ACTIVITY_KEY:
+				 	if(requestCode==0) {
+				 		displayMessage("Email succeeded");
+				 	} else {
+				 		displayMessage("Email failed");
+				 	}
+				 	shutdownApp();
+				 	break;
 			 default:
 				 	//UNKNOWN Activity started
 				 	break;
@@ -170,6 +180,26 @@ public class ShareMyLocationActivity extends Activity {
 		 }
 	 }
 	 
+	 private void sendEmail() {
+		 //TODO Need alert dialog
+		 //Intent myIntent = new Intent(MY_CONTEXT, EmailActivity.class);
+  	   	// startActivityForResult(myIntent, EMAIL_ACTIVITY_KEY);
+		String message = "";
+		message = String.format(
+				"COMMENTS: \n\n\nLat: $1\nLong: $2\nBuilding: $3\nStreet: $4\nCity: $5\nState: $6\nZip: $7\n",
+				m_latitude, m_longitude, m_bldg_num, m_street, m_city, m_state, m_zip);
+				
+		Intent i = new Intent(Intent.ACTION_SEND);
+		i.setType("text/plain");
+		i.putExtra(Intent.EXTRA_EMAIL  , new String[]{"asdantius5@gmail.com"});
+		i.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
+		i.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
+		try {
+		    startActivityForResult(Intent.createChooser(i, "Send mail..."), EMAIL_ACTIVITY_KEY);
+		} catch (android.content.ActivityNotFoundException ex) {
+			displayMessage("There are no email clients installed.");
+		}
+	 }
 	 private void promptUserForGPS() {
 	    	/*
 	    	 * create dialogue for user to turn on GPS or skip to userform
@@ -331,7 +361,7 @@ public class ShareMyLocationActivity extends Activity {
         et_zip = (EditText) findViewById(R.id.et_zip);
         
         b_exit = (Button) findViewById(R.id.b_exit);
-        
+        b_send_email = (Button) findViewById(R.id.b_send_email);
         /*
          * Fill in with address fields (if available on a per field basis)
          */
@@ -350,6 +380,15 @@ public class ShareMyLocationActivity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				shutdownApp();
+			}
+        });
+        
+        b_send_email.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				displayMessage("Please Insert Comments only under Comments section");
+				sendEmail();
 			}
         });
 		
