@@ -3,10 +3,15 @@ package com.Title50;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Locale;
 
@@ -59,9 +64,11 @@ public class ShareMyLocationActivity extends Activity {
 	protected LocationManager m_locationManager;
 	protected Geocoder m_geocoder;
 	
+	//TODO move these into function
 	protected Button b_retrieve_location;
 	protected Button b_end_app; 
 	protected Button b_send_data;
+	protected Button b_update_gps;
 	
 	protected View v_gps_context_menu;
 	
@@ -121,12 +128,7 @@ public class ShareMyLocationActivity extends Activity {
         m_longitude= -99999;
         m_gps_enabled = false;
         m_wait_for_gps= false;
-        /*
-        //TODO Remove buttons (new layout to come)
-        b_retrieve_location = (Button) findViewById(R.id.retrieve_location_button);
-        b_end_app = (Button) findViewById(R.id.end_app_button);
-        b_send_data = (Button) findViewById(R.id.send_tcp_data);
-        */
+
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         m_location_listener = new MyLocationListener();
@@ -154,11 +156,14 @@ public class ShareMyLocationActivity extends Activity {
 				 	checkGpsStatus(false);
 				 	break;
 			 case EMAIL_ACTIVITY_KEY:
+				 	String message = "";
 				 	if(requestCode==0) {
-				 		displayMessage("Email succeeded");
+				 		message = String.format("Email succeeded");
 				 	} else {
-				 		displayMessage("Email failed");
+				 		message = String.format("Email failed: %1$s",requestCode);
 				 	}
+				 	
+				 	displayMessage(message);
 				 	shutdownApp();
 				 	break;
 			 default:
@@ -179,27 +184,94 @@ public class ShareMyLocationActivity extends Activity {
 			 }
 		 }
 	 }
-	 
+	 private void continueToEmail() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
+     	builder.setMessage("Are you sure you want to continue?")
+     	       .setCancelable(false)
+     	       .setPositiveButton("Continue to submit", new DialogInterface.OnClickListener() {
+     	           public void onClick(DialogInterface dialog, int id) {
+     	        	  /*
+     	        	   * User is directed to comments section
+     	        	   */
+     	        	   sendEmail();
+     	           }
+     	       })
+     	       .setNegativeButton("Edit information", new DialogInterface.OnClickListener() {
+     	           public void onClick(DialogInterface dialog, int id) {
+     	        	   //do nothing, dismiss dialog
+     	           }
+     	           
+     	       });
+     	
+     	AlertDialog dialog = builder.create();
+     	m_wait_for_gps=true;
+     	dialog.show();
+	 }
 	 private void sendEmail() {
-		 //TODO Need alert dialog
-		 //Intent myIntent = new Intent(MY_CONTEXT, EmailActivity.class);
-  	   	// startActivityForResult(myIntent, EMAIL_ACTIVITY_KEY);
-		String message = "";
-		message = String.format(
-				"COMMENTS: \n\n\nLat: $1\nLong: $2\nBuilding: $3\nStreet: $4\nCity: $5\nState: $6\nZip: $7\n",
-				m_latitude, m_longitude, m_bldg_num, m_street, m_city, m_state, m_zip);
-				
-		Intent i = new Intent(Intent.ACTION_SEND);
-		i.setType("text/plain");
-		i.putExtra(Intent.EXTRA_EMAIL  , new String[]{"asdantius5@gmail.com"});
-		i.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
-		i.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
+		 String message = "";
+			message = String.format(
+					"COMMENTS: \n\n\nLat: %1$s\nLong: %2$s\nBuilding: %3$s\nStreet: %4$s\nCity: %5$s\nState: %6$s\nZip: %7$s\n",
+					m_latitude, m_longitude, m_bldg_num, m_street, m_city, m_state, m_zip);
+			
+		 String file_name = "results085937593.txt";
+		 boolean file_created = false;
+		
+		 String homeDir="";
+		 File dir=null;
+		 File file = null;
+		//create file writer
 		try {
-		    startActivityForResult(Intent.createChooser(i, "Send mail..."), EMAIL_ACTIVITY_KEY);
+			//??? Need to see how I can change this
+			//sdCard = Environment.getExternalStorageDirectory();
+			homeDir = "/sdcard";
+			dir = new File (homeDir + "/AAB_FILES");
+			
+			if(dir.mkdirs() == false) {
+				//already created
+			}
+					
+			//creates file in directory with given FileName
+			//if cannot open file, make new file
+			file = new File(dir, file_name);
+					
+			boolean exists = file.exists();	
+			
+			FileOutputStream os = new FileOutputStream(file, true); 
+			OutputStreamWriter out = new OutputStreamWriter(os);
+			out.write(message);
+			out.close();
+			file_created = true;
+		 } catch(Exception e) {
+			message = String.format("File failed");
+			displayMessage(message);
+			file_created = false;
+		 }
+		
+		
+		Intent intent = new Intent(Intent.ACTION_SEND);
+		intent.setType("text/plain");
+		intent.putExtra(Intent.EXTRA_EMAIL  , new String[]{"asdantius5@gmail.com"});
+		intent.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
+		//TODO if you cant save/open file then send text
+		Uri uri=null;
+		String full_path="none";
+		if(file.exists()) {
+			full_path = String.format("file://"+Environment.getExternalStorageDirectory().getAbsolutePath()+dir.getName()+"/"+file_name);
+			uri = Uri.parse(full_path);//TODO"/mnt/sdcard/"+"/"+dir.getName()+file_name
+			//intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+			//intent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://"+ dir.getName()+file_name));
+			intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+		} else {
+			intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
+		}
+		try {
+		    startActivityForResult(Intent.createChooser(intent, "Send mail..."), EMAIL_ACTIVITY_KEY);
 		} catch (android.content.ActivityNotFoundException ex) {
 			displayMessage("There are no email clients installed.");
 		}
+		displayMessage(full_path);
 	 }
+	 
 	 private void promptUserForGPS() {
 	    	/*
 	    	 * create dialogue for user to turn on GPS or skip to userform
@@ -362,6 +434,7 @@ public class ShareMyLocationActivity extends Activity {
         
         b_exit = (Button) findViewById(R.id.b_exit);
         b_send_email = (Button) findViewById(R.id.b_send_email);
+        b_update_gps = (Button) findViewById(R.id.b_update_gps);
         /*
          * Fill in with address fields (if available on a per field basis)
          */
@@ -387,7 +460,7 @@ public class ShareMyLocationActivity extends Activity {
 
 			@Override
 			public void onClick(View arg0) {
-				displayMessage("Please Insert Comments only under Comments section");
+				//displayMessage("Please Insert Comments only under Comments section");
 				sendEmail();
 			}
         });
