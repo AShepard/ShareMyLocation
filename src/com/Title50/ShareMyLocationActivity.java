@@ -3,6 +3,7 @@ package com.Title50;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -51,6 +52,8 @@ public class ShareMyLocationActivity extends Activity {
 	private final String ADDR_LONG = "LONG_KEY";
 	private final String ADDR_LAT ="LAT_KEY";
 	
+	private final double GPS_WAIT_TIME = 3.00;
+	private final int SECONDS_TO_MILLISECONDS = 1000;
 	private final String EMAIL_ADDR = "asdantius5@gmail.com";
 	private static final int EMAIL_ACTIVITY_KEY = 51212;
 	
@@ -64,16 +67,19 @@ public class ShareMyLocationActivity extends Activity {
 	protected LocationManager m_locationManager;
 	protected Geocoder m_geocoder;
 	
-	//TODO move these into function
+	//AddressForm buttons
 	protected Button b_retrieve_location;
 	protected Button b_end_app; 
 	protected Button b_send_data;
-	protected Button b_update_gps;
+	protected Button b_update_location;
+	protected Button b_exit;
+	protected Button b_send_email;
+	protected Button b_clear_info;
 	
 	protected View v_gps_context_menu;
 	
 	/*
-	 * Strings/EditText/coordinates for address
+	 * Strings/EditText/coordinates for addressForm
 	 */
 	private double m_latitude;
 	private double m_longitude;
@@ -95,13 +101,10 @@ public class ShareMyLocationActivity extends Activity {
 	private EditText et_state;
 	private EditText et_zip;
 	
-	private Button b_exit;
-	private Button b_send_email;
+	
 	//location listener for GPS
 	protected MyLocationListener m_location_listener;
-	
-	private boolean m_gps_enabled;
-	private boolean m_wait_for_gps;
+
 	/*
 	 * First function called! 
 	 * Will display loading screen while determining if GPS available
@@ -126,8 +129,6 @@ public class ShareMyLocationActivity extends Activity {
         m_long_str = "";
         m_latitude = -99999;
         m_longitude= -99999;
-        m_gps_enabled = false;
-        m_wait_for_gps= false;
 
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -145,7 +146,7 @@ public class ShareMyLocationActivity extends Activity {
         /*
          * Determine if GPS enabled: perform getLocation/addressform/alertdialog
          */
-        checkGpsStatus(true);
+        launchAddressForm();
         
 	 }  
 	
@@ -153,14 +154,16 @@ public class ShareMyLocationActivity extends Activity {
 	 protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		 switch(requestCode) {
 			 case SETTINGS_ACTIVITY_KEY:
+				 	//user possibly changed GPS location
 				 	checkGpsStatus(false);
 				 	break;
 			 case EMAIL_ACTIVITY_KEY:
 				 	String message = "";
-				 	if(requestCode==0) {
-				 		message = String.format("Email succeeded");
+				 	//TODO result code
+				 	if(requestCode==-1) {
+				 		message = String.format("Email failed!");
 				 	} else {
-				 		message = String.format("Email failed: %1$s",requestCode);
+				 		message = String.format("Email succeeded: %1$s",requestCode);
 				 	}
 				 	
 				 	displayMessage(message);
@@ -174,103 +177,27 @@ public class ShareMyLocationActivity extends Activity {
 	 
 	 private void checkGpsStatus(boolean runDialog) {
 		 if(m_locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER )) {
-			 getCurrentLocation();
-	         launchAddressForm();
+			 updateLocation(true);
 		 } else {
 			 if(runDialog) {
 				 promptUserForGPS();
 			 } else {
-				 launchAddressForm();
+				 //do nothing, user already prompted
 			 }
 		 }
 	 }
-	 private void continueToEmail() {
-		AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
-     	builder.setMessage("Are you sure you want to continue?")
-     	       .setCancelable(false)
-     	       .setPositiveButton("Continue to submit", new DialogInterface.OnClickListener() {
-     	           public void onClick(DialogInterface dialog, int id) {
-     	        	  /*
-     	        	   * User is directed to comments section
-     	        	   */
-     	        	   sendEmail();
-     	           }
-     	       })
-     	       .setNegativeButton("Edit information", new DialogInterface.OnClickListener() {
-     	           public void onClick(DialogInterface dialog, int id) {
-     	        	   //do nothing, dismiss dialog
-     	           }
-     	           
-     	       });
-     	
-     	AlertDialog dialog = builder.create();
-     	m_wait_for_gps=true;
-     	dialog.show();
+	 /*
+	 * This is called if user selects to update GPS
+	 */
+	 private void updateLocation(boolean insertAddress) {
+		/*
+		 * Updates GPS location
+		 * then changes address fields
+		 */
+		getCurrentLocation();
+		fillAddressForm();
 	 }
-	 private void sendEmail() {
-		 String message = "";
-			message = String.format(
-					"COMMENTS: \n\n\nLat: %1$s\nLong: %2$s\nBuilding: %3$s\nStreet: %4$s\nCity: %5$s\nState: %6$s\nZip: %7$s\n",
-					m_latitude, m_longitude, m_bldg_num, m_street, m_city, m_state, m_zip);
-			
-		 String file_name = "results085937593.txt";
-		 boolean file_created = false;
-		
-		 String homeDir="";
-		 File dir=null;
-		 File file = null;
-		//create file writer
-		try {
-			//??? Need to see how I can change this
-			//sdCard = Environment.getExternalStorageDirectory();
-			homeDir = "/sdcard";
-			dir = new File (homeDir + "/AAB_FILES");
-			
-			if(dir.mkdirs() == false) {
-				//already created
-			}
-					
-			//creates file in directory with given FileName
-			//if cannot open file, make new file
-			file = new File(dir, file_name);
-					
-			boolean exists = file.exists();	
-			
-			FileOutputStream os = new FileOutputStream(file, true); 
-			OutputStreamWriter out = new OutputStreamWriter(os);
-			out.write(message);
-			out.close();
-			file_created = true;
-		 } catch(Exception e) {
-			message = String.format("File failed");
-			displayMessage(message);
-			file_created = false;
-		 }
-		
-		
-		Intent intent = new Intent(Intent.ACTION_SEND);
-		intent.setType("text/plain");
-		intent.putExtra(Intent.EXTRA_EMAIL  , new String[]{"asdantius5@gmail.com"});
-		intent.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
-		//TODO if you cant save/open file then send text
-		Uri uri=null;
-		String full_path="none";
-		if(file.exists()) {
-			full_path = String.format("file://"+Environment.getExternalStorageDirectory().getAbsolutePath()+dir.getName()+"/"+file_name);
-			uri = Uri.parse(full_path);//TODO"/mnt/sdcard/"+"/"+dir.getName()+file_name
-			//intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
-			//intent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://"+ dir.getName()+file_name));
-			intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
-		} else {
-			intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
-		}
-		try {
-		    startActivityForResult(Intent.createChooser(intent, "Send mail..."), EMAIL_ACTIVITY_KEY);
-		} catch (android.content.ActivityNotFoundException ex) {
-			displayMessage("There are no email clients installed.");
-		}
-		displayMessage(full_path);
-	 }
+	 
 	 
 	 private void promptUserForGPS() {
 	    	/*
@@ -284,6 +211,7 @@ public class ShareMyLocationActivity extends Activity {
 	        	           public void onClick(DialogInterface dialog, int id) {
 	        	        	  /*
 	        	        	   * User is directed to phone settings to turn on GPS
+	        	        	   * the answer is caught in onActivityResult with SETTINGS_ACTIVITY_KEY
 	        	        	   */
 	        	        	   Intent myIntent = new Intent( Settings.ACTION_SECURITY_SETTINGS );
 	        	        	   startActivityForResult(myIntent, SETTINGS_ACTIVITY_KEY);
@@ -292,21 +220,20 @@ public class ShareMyLocationActivity extends Activity {
 	        	       .setNegativeButton("Ignore", new DialogInterface.OnClickListener() {
 	        	           public void onClick(DialogInterface dialog, int id) {
 	        	        	   //just dismiss dialog
-	        	        	   launchAddressForm();
 	        	           }
 	        	           
 	        	       });
 	        	
 	        	AlertDialog dialog = builder.create();
-	        	m_wait_for_gps=true;
 	        	dialog.show();   	
 	        }
-	
+	 
 //-------------------------------------------------------------------
 //Translate latitude/longitude to street address then populate form
 //-------------------------------------------------------------------		
 	 protected void getCurrentLocation() {
 
+		progressBar();
         Location location = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         String message = "";
@@ -363,21 +290,49 @@ public class ShareMyLocationActivity extends Activity {
             	  }
             	 } catch (IOException e) {
 	            	  e.printStackTrace();
-	            	  message = String.format("Cannot get Address!");
+	            	  message = String.format("Cannot get Address Please Enter Manually!");
+	            	  displayMessage(message);
             	 }
 
-            	 displayMessage(message);
+            	 
         	}
     }  
+	 
+	private void progressBar() {
+		/*
+		 * have spinner come up to indicate getting GPS location
+		 * wait X seconds then end
+		 */
+		//TODO: GPS_WAIT_TIME
+		int wait_time = (int)GPS_WAIT_TIME*SECONDS_TO_MILLISECONDS;
+		ProgressDialog dialog;
+		dialog = new ProgressDialog(this);
+	    dialog.setMessage("Waiting For GPS Signal");
+	    //dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+	    dialog.setMax(wait_time);
+	    dialog.setCancelable(true);
+	    dialog.show();
+	}
 	//-------------------------------------------------------------------
  	//Insert values into form if they exist, allow user to modify
  	//-------------------------------------------------------------------
-	protected void launchAddressForm() {
+	private void clearAddressForm() {
+    	m_bldg_num = "";
+    	m_street = "";
+    	m_city = "";
+    	m_state = "";
+    	m_zip = "";
+         
+     	m_lat_str = String.format("");
+     	m_long_str = String.format("");
+     	
+     	m_latitude = -99999;
+     	m_longitude = -99999;
+     	
+     	fillAddressForm();
+	}
+	private void fillAddressForm() {
 		/*
-		 * Pass args to activity
-		 * start activity (not for result, this will end current app)
-		 */
-		/* TODO: remove
 		m_bldg_num = "Bldg num";
         m_street ="Street";
         m_state ="State";
@@ -406,17 +361,36 @@ public class ShareMyLocationActivity extends Activity {
         	m_zip = "";
         }
          
-         if(m_latitude<=90 && m_latitude >=-90) {
-         	m_lat_str = String.format("Latitude: %1$s", m_latitude);
-         } else {
-         	m_lat_str = String.format("Latitude: unknown");
-         }
-         if(m_longitude<=90 && m_longitude >=-90) {
-         	m_long_str = String.format("Longitude: %1$s", m_longitude);
-         } else {
-         	m_long_str = String.format("Longitude: unknown");
-         }
+	     if(m_latitude<=180 && m_latitude >=-180) {
+	     	m_lat_str = String.format("Latitude: %1$s", m_latitude);
+	     } else {
+	     	m_lat_str = String.format("Latitude: unknown");
+	     }
+	     if(m_longitude<=180 && m_longitude >=-180) {
+	     	m_long_str = String.format("Longitude: %1$s", m_longitude);
+	     } else {
+	     	m_long_str = String.format("Longitude: unknown");
+	     }
          
+         tv_longitude.setText(m_long_str);
+         tv_latitude.setText(m_lat_str);
+         
+         et_bldg_num.setText(m_bldg_num);
+         et_street.setText(m_street);
+         et_city.setText(m_city);
+         et_state.setText(m_state);
+         et_zip.setText(m_zip);
+	}
+	/*
+	 * Display address form
+	 */
+	protected void launchAddressForm() {
+		/*
+		 * Check to see if GPS enabled
+		 * Prompt user to change
+		 * load address info, allow user to edit loc info
+		 */
+		
         //Change layout to the address form
         setContentView(R.layout.address_editor);
 	   
@@ -434,25 +408,41 @@ public class ShareMyLocationActivity extends Activity {
         
         b_exit = (Button) findViewById(R.id.b_exit);
         b_send_email = (Button) findViewById(R.id.b_send_email);
-        b_update_gps = (Button) findViewById(R.id.b_update_gps);
-        /*
-         * Fill in with address fields (if available on a per field basis)
-         */
+        b_update_location = (Button) findViewById(R.id.b_update_location);
+        b_clear_info = (Button) findViewById(R.id.b_clear_info);
+        //check to see if GPS available, prompt if not
+		checkGpsStatus(true);
         
-        tv_longitude.setText(m_long_str);
-        tv_latitude.setText(m_lat_str);
-        
-        et_bldg_num.setText(m_bldg_num);
-        et_street.setText(m_street);
-        et_city.setText(m_city);
-        et_state.setText(m_state);
-        et_zip.setText(m_zip);
-		
+       /*
+        * User now has option to edit/exit/ or send data
+        */
         b_exit.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View arg0) {
+				/*
+				 * Exit the app
+				 */
 				shutdownApp();
+			}
+        });
+        b_clear_info.setOnClickListener(new OnClickListener() {
+        	@Override
+			public void onClick(View arg0) {
+				/*
+				 * delete fields in text boxes (reset members)
+				 */
+        		clearAddressForm();
+			}
+        });
+        b_update_location.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				/*
+				 * update users location
+				 */
+				checkGpsStatus(true);
 			}
         });
         
@@ -460,14 +450,120 @@ public class ShareMyLocationActivity extends Activity {
 
 			@Override
 			public void onClick(View arg0) {
-				//displayMessage("Please Insert Comments only under Comments section");
-				sendEmail();
+				/*
+				 * send email with location data
+				 */
+				continueToEmail();
 			}
         });
 		
 	}
+/*
+ * Function relating to EMAIL
+ */
+	private void continueToEmail() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
+     	builder.setMessage("Are you sure you want to continue?")
+     	       .setCancelable(false)
+     	       .setPositiveButton("Continue to send attachment via email", new DialogInterface.OnClickListener() {
+     	           public void onClick(DialogInterface dialog, int id) {
+     	        	  /*
+     	        	   * User is directed to comments section
+     	        	   */
+     	        	   sendEmail();
+     	           }
+     	       })
+     	       .setNegativeButton("Edit information", new DialogInterface.OnClickListener() {
+     	           public void onClick(DialogInterface dialog, int id) {
+     	        	   //do nothing, dismiss dialog
+     	           }
+     	           
+     	       });
+     	
+     	AlertDialog dialog = builder.create();
+     	dialog.show();
+	 }
 	
+	private File createLocationFile(String file_name, String dir_name, String message) {
+		 
+		 String homeDir="";
+		 File dir=null;
+		 File file = null;
+		//create file writer
+		try {
+			homeDir = "/sdcard";
+			dir = new File (homeDir + dir_name);
+			
+			if(dir.mkdirs() == false) {
+				//already created
+			}
+					
+			//creates file in directory with given FileName
+			//if cannot open file, make new file
+			file = new File(dir, file_name);
+			
+			FileOutputStream os = new FileOutputStream(file, true); 
+			OutputStreamWriter out = new OutputStreamWriter(os);
+			out.write(message);
+			out.close();
+		 } catch(Exception e) {
+			message = String.format("File failed");
+			displayMessage(message);
+			return null;
+		 }
+		 
+		 return file;
+	 }
 	
+	 private void sendEmail() {
+		 
+		/*
+		 * Create attachment file
+		 * then attach file to email and send
+		 */
+		File file = null; 
+		String message = "";
+		//TODO change based on date and location
+		String file_name = "results1111.txt";
+		String dir_name = "/AAB_FILES";
+		message = String.format(
+					"COMMENTS: \n\n\nLat: %1$s\nLong: %2$s\nBuilding: %3$s\nStreet: %4$s\nCity: %5$s\nState: %6$s\nZip: %7$s\n",
+					m_latitude, m_longitude, m_bldg_num, m_street, m_city, m_state, m_zip);
+		
+		//Create attachment to send with email
+		file = createLocationFile(file_name, dir_name, message);
+		
+		/*
+		 * Set up email activity
+		 */
+		Intent intent = new Intent(Intent.ACTION_SEND);
+		intent.setType("text/plain");
+		intent.putExtra(Intent.EXTRA_EMAIL  , new String[]{EMAIL_ADDR});
+		intent.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
+		
+		Uri uri=null;
+		String full_path="none";
+		
+		//attach data as attachment or text-body
+		if(file.exists()) {
+			full_path = String.format("file://"+file.getAbsolutePath());
+			uri = Uri.parse(full_path);
+			intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+		} else {
+			//if unable to find file, then send data via text
+			intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
+		}
+		
+		/*
+		 * Send email, or catach no email client
+		 */
+		try {
+		    startActivityForResult(Intent.createChooser(intent, "Send mail..."), EMAIL_ACTIVITY_KEY);
+		} catch (android.content.ActivityNotFoundException ex) {
+			displayMessage("There are no email clients installed.");
+		}
+		displayMessage(full_path);
+	 }
  //-------------------------------------------------------------------
  // Listener functions for GPS
  //-------------------------------------------------------------------
@@ -489,7 +585,6 @@ public class ShareMyLocationActivity extends Activity {
         }
 
         public void onProviderDisabled(String s) {
-        	m_gps_enabled = false;
         	String message = String.format(
         			"Provider disabled by the user. GPS turned off"
             );
@@ -499,12 +594,10 @@ public class ShareMyLocationActivity extends Activity {
         
         
         public void onProviderEnabled(String s) {
-        	m_gps_enabled = true;
         	String message = String.format(
         			"Provider enabled by the user. GPS turned on"
             );
         	//displayMessage(message);
-        	//getCurrentLocation();
         }
 	 
 	}
