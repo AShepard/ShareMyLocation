@@ -7,6 +7,7 @@ import android.app.ProgressDialog;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.Settings;
 
 import java.io.File;
@@ -15,7 +16,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import android.hardware.Camera;
 import android.location.Address;
 import android.location.Geocoder;
 
@@ -25,6 +29,8 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -43,6 +49,16 @@ import android.widget.Toast;
  */
 
 public class ShareMyLocationActivity extends Activity {
+	//Activity onResult Keys
+	private static final int EMAIL_ACTIVITY_KEY = 51212;
+	private static final int TAKE_PICTURE_KEY = 153256;
+	private static final int SETTINGS_ACTIVITY_KEY = 13683;
+	
+	//Option menu option keys
+	private static final int EXIT_OPTION = 1;
+	private static final int CLEAR_TEXT_OPTION = 2;
+	private static final int OTHER_OPTION = 10;
+	
 	//These are keys relating to email and location settings activites
 	private final String ADDR_BUILDING = "BUILDING_KEY";
 	private final String ADDR_STREET = "STREET_KEY";
@@ -52,12 +68,15 @@ public class ShareMyLocationActivity extends Activity {
 	private final String ADDR_LONG = "LONG_KEY";
 	private final String ADDR_LAT ="LAT_KEY";
 	
+	private Timer progress_bar_timer;
+	private boolean show_progess;
 	private final double GPS_WAIT_TIME = 3.00;
 	private final int SECONDS_TO_MILLISECONDS = 1000;
-	private final String EMAIL_ADDR = "asdantius5@gmail.com";
-	private static final int EMAIL_ACTIVITY_KEY = 51212;
 	
-	private final int SETTINGS_ACTIVITY_KEY = 13683;
+	
+	private String m_picture_location;
+	private final String EMAIL_ADDR = "asdantius5@gmail.com";
+	
 	
 	
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
@@ -67,14 +86,16 @@ public class ShareMyLocationActivity extends Activity {
 	protected LocationManager m_locationManager;
 	protected Geocoder m_geocoder;
 	
+	
 	//AddressForm buttons
 	protected Button b_retrieve_location;
 	protected Button b_end_app; 
 	protected Button b_send_data;
 	protected Button b_update_location;
-	protected Button b_exit;
+	//protected Button b_exit;
 	protected Button b_send_email;
-	protected Button b_clear_info;
+	//protected Button b_clear_info;
+	protected Button b_take_picture;
 	
 	protected View v_gps_context_menu;
 	
@@ -129,7 +150,9 @@ public class ShareMyLocationActivity extends Activity {
         m_long_str = "";
         m_latitude = -99999;
         m_longitude= -99999;
-
+        show_progess = false;
+        m_picture_location = "";
+        
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         m_location_listener = new MyLocationListener();
@@ -157,17 +180,28 @@ public class ShareMyLocationActivity extends Activity {
 				 	//user possibly changed GPS location
 				 	checkGpsStatus(false);
 				 	break;
-			 case EMAIL_ACTIVITY_KEY:
-				 	String message = "";
-				 	//TODO result code
-				 	if(requestCode==-1) {
-				 		message = String.format("Email failed!");
+			 //TODO: Picture result
+			 case TAKE_PICTURE_KEY:
+				 	//check if picture recieved
+				 	displayMessage("Picture result: " + resultCode);
+				 	if (resultCode != 0) {
+				 		//TODO: see if can get picture name from "data" parameter
 				 	} else {
-				 		message = String.format("Email succeeded: %1$s",requestCode);
+				 		//reset picture location
+				 		m_picture_location = "";
+				 	}
+				 	break;
+			case EMAIL_ACTIVITY_KEY:
+				 	String message = "";
+				 	if(resultCode==0) {
+				 		message = String.format("Email failed: %1$s",resultCode);
+				 	} else {
+				 		message = String.format("Email succeeded: %1$s",resultCode);
+				 		shutdownApp();
 				 	}
 				 	
-				 	displayMessage(message);
-				 	shutdownApp();
+				 	//displayMessage(message);
+				 	
 				 	break;
 			 default:
 				 	//UNKNOWN Activity started
@@ -303,15 +337,41 @@ public class ShareMyLocationActivity extends Activity {
 		 * have spinner come up to indicate getting GPS location
 		 * wait X seconds then end
 		 */
+	
+		/*
+		 * Start timer, will change show_progess to false
+		 */
+		//progress_bar_timer = new Timer();;
+		//progress_bar_timer.schedule(new ProgressBarTask(), wait_time);
+		
 		//TODO: GPS_WAIT_TIME
-		int wait_time = (int)GPS_WAIT_TIME*SECONDS_TO_MILLISECONDS;
 		ProgressDialog dialog;
 		dialog = new ProgressDialog(this);
 	    dialog.setMessage("Waiting For GPS Signal");
 	    //dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-	    dialog.setMax(wait_time);
+	    //dialog.setMax(wait_time);
 	    dialog.setCancelable(true);
 	    dialog.show();
+	    
+	    show_progess = true;
+	    
+	    waitForTime();
+	    //dialog.dismiss();
+	}
+	
+	private void waitForTime() {
+		int wait_time = (int)GPS_WAIT_TIME * SECONDS_TO_MILLISECONDS;
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(new TimerTask() {
+	        public void run() {
+	        	show_progess = false;
+	            cancel();
+	            
+	        }
+	    }, wait_time, wait_time);
+		while(show_progess) {
+			
+		}
 	}
 	//-------------------------------------------------------------------
  	//Insert values into form if they exist, allow user to modify
@@ -406,35 +466,18 @@ public class ShareMyLocationActivity extends Activity {
         et_state = (EditText) findViewById(R.id.et_state);
         et_zip = (EditText) findViewById(R.id.et_zip);
         
-        b_exit = (Button) findViewById(R.id.b_exit);
+        //Buttons on page
+       // b_exit = (Button) findViewById(R.id.b_exit);
         b_send_email = (Button) findViewById(R.id.b_send_email);
         b_update_location = (Button) findViewById(R.id.b_update_location);
-        b_clear_info = (Button) findViewById(R.id.b_clear_info);
+       // b_clear_info = (Button) findViewById(R.id.b_clear_info);
+        b_take_picture = (Button) findViewById(R.id.b_take_picture);
+        
+        //fill with default values
+        fillAddressForm();
         //check to see if GPS available, prompt if not
 		checkGpsStatus(true);
         
-       /*
-        * User now has option to edit/exit/ or send data
-        */
-        b_exit.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				/*
-				 * Exit the app
-				 */
-				shutdownApp();
-			}
-        });
-        b_clear_info.setOnClickListener(new OnClickListener() {
-        	@Override
-			public void onClick(View arg0) {
-				/*
-				 * delete fields in text boxes (reset members)
-				 */
-        		clearAddressForm();
-			}
-        });
         b_update_location.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -457,6 +500,62 @@ public class ShareMyLocationActivity extends Activity {
 			}
         });
 		
+        b_take_picture.setOnClickListener(new OnClickListener() {
+        	@Override
+			public void onClick(View arg0) {
+				/*
+				 * send email with location data
+				 */
+        		//if pic exists, then ask if they want it replaced
+        		if(m_picture_location!="") {
+        			changePictureDialog();
+        		} else {
+        			takePicture();
+        		}
+			}
+        });
+	}
+/*
+ * Functions for taking a picture
+ */
+	private void changePictureDialog() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
+     	builder.setMessage("A picture was already taken! Do you want to replace it?")
+     	       .setCancelable(false)
+     	       .setPositiveButton("Retake Picture", new DialogInterface.OnClickListener() {
+     	           public void onClick(DialogInterface dialog, int id) {
+     	        	  /*
+     	        	   * User is directed to comments section
+     	        	   */
+     	        	  takePicture();
+     	           }
+     	       })
+     	       .setNegativeButton("Keep current picture", new DialogInterface.OnClickListener() {
+     	           public void onClick(DialogInterface dialog, int id) {
+     	        	   //do nothing, dismiss dialog
+     	           }
+     	           
+     	       });
+     	
+     	AlertDialog dialog = builder.create();
+     	dialog.show();
+	}
+	private void takePicture() {
+		
+		String file_name = "aab_picture.jpeg";
+		String home_dir = "/sdcard";
+		File dir=null;
+		String dir_name =  home_dir +"/AAB_FILES";
+		dir = new File(dir_name);
+		if(dir.mkdirs() == false) {
+			//already created
+		}
+		File picture_file = new File(dir_name, file_name);
+		
+		m_picture_location = picture_file.getAbsolutePath();
+		Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+	    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(picture_file));
+	    startActivityForResult(takePictureIntent, TAKE_PICTURE_KEY);
 	}
 /*
  * Function relating to EMAIL
@@ -514,7 +613,7 @@ public class ShareMyLocationActivity extends Activity {
 		 
 		 return file;
 	 }
-	
+	//TODO: figure out how to attach 2 files
 	 private void sendEmail() {
 		 
 		/*
@@ -554,8 +653,15 @@ public class ShareMyLocationActivity extends Activity {
 			intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
 		}
 		
+		//attach picture if it exists
+		if(m_picture_location != "") {
+			full_path = String.format("file://"+m_picture_location);
+			uri = Uri.parse(full_path);
+			intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+		}
+		
 		/*
-		 * Send email, or catach no email client
+		 * Send email, or catch no email client
 		 */
 		try {
 		    startActivityForResult(Intent.createChooser(intent, "Send mail..."), EMAIL_ACTIVITY_KEY);
@@ -564,6 +670,38 @@ public class ShareMyLocationActivity extends Activity {
 		}
 		displayMessage(full_path);
 	 }
+/*
+ * TODO: figure out what should be added here
+ * Options Menu:
+ * allows user to exit
+ */
+	 @Override
+     public boolean onCreateOptionsMenu(Menu menu){
+	     menu.add(1, EXIT_OPTION, 1, "Exit");
+	     menu.add(1, CLEAR_TEXT_OPTION, 2, "Clear Text Boxes");
+	     return true;
+    }
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    switch(item.getItemId()) {
+		     case EXIT_OPTION:
+		    	 displayMessage("you clicked on item "+item.getTitle());
+		    	 shutdownApp();
+		         return true;
+		     case CLEAR_TEXT_OPTION:
+		    	 displayMessage("you clicked on item "+item.getTitle());
+		    	 clearAddressForm();
+		         return true;
+		     case OTHER_OPTION:
+		    	 displayMessage("you clicked on item "+item.getTitle() + ": NOT IMPLEMENTED");
+		    	 return true;
+		     default:
+		    	 displayMessage("Not sure what you clicked" + item.getItemId());
+		    	 return false;
+	     }
+	     //return super.onOptionsItemSelected(item);
+
+	}
  //-------------------------------------------------------------------
  // Listener functions for GPS
  //-------------------------------------------------------------------

@@ -72,25 +72,20 @@
         <requestFocus />
     </EditText>
     <Button
+        android:id="@+id/b_take_picture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Take a picture!" />
+    <Button
         android:id="@+id/b_update_location"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Update GPS Location" />
-    <Button
-        android:id="@+id/b_clear_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Clear Text Boxes" />
 	<Button
         android:id="@+id/b_send_email"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Continue (to email)" />
-    <Button
-        android:id="@+id/b_exit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Exit" />
     
 
 </LinearLayout>
