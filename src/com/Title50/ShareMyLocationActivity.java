@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -73,7 +74,7 @@ public class ShareMyLocationActivity extends Activity {
 	private final double GPS_WAIT_TIME = 3.00;
 	private final int SECONDS_TO_MILLISECONDS = 1000;
 	
-	
+	private String m_loc_file_location;
 	private String m_picture_location;
 	private final String EMAIL_ADDR = "asdantius5@gmail.com";
 	
@@ -151,7 +152,9 @@ public class ShareMyLocationActivity extends Activity {
         m_latitude = -99999;
         m_longitude= -99999;
         show_progess = false;
+        
         m_picture_location = "";
+        m_loc_file_location = "";
         
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -183,7 +186,7 @@ public class ShareMyLocationActivity extends Activity {
 			 //TODO: Picture result
 			 case TAKE_PICTURE_KEY:
 				 	//check if picture recieved
-				 	displayMessage("Picture result: " + resultCode);
+				 	//displayMessage("Picture result: " + resultCode);
 				 	if (resultCode != 0) {
 				 		//TODO: see if can get picture name from "data" parameter
 				 	} else {
@@ -193,14 +196,14 @@ public class ShareMyLocationActivity extends Activity {
 				 	break;
 			case EMAIL_ACTIVITY_KEY:
 				 	String message = "";
-				 	if(resultCode==0) {
+				 	if(resultCode==RESULT_CANCELED) {
 				 		message = String.format("Email failed: %1$s",resultCode);
 				 	} else {
 				 		message = String.format("Email succeeded: %1$s",resultCode);
 				 		shutdownApp();
 				 	}
 				 	
-				 	//displayMessage(message);
+				 	displayMessage(message);
 				 	
 				 	break;
 			 default:
@@ -543,7 +546,7 @@ public class ShareMyLocationActivity extends Activity {
 	}
 	private void takePicture() {
 		
-		String file_name = "aab_picture.jpeg";
+		String file_name = "aab_picture_" + System.currentTimeMillis() + ".jpeg";
 		String home_dir = "/sdcard";
 		File dir=null;
 		String dir_name =  home_dir +"/AAB_FILES";
@@ -624,7 +627,7 @@ public class ShareMyLocationActivity extends Activity {
 		File file = null; 
 		String message = "";
 		//TODO change based on date and location
-		String file_name = "results1111.txt";
+		String file_name = "location_results_" + System.currentTimeMillis() +".txt";
 		String dir_name = "/AAB_FILES";
 		message = String.format(
 					"COMMENTS: \n\n\nLat: %1$s\nLong: %2$s\nBuilding: %3$s\nStreet: %4$s\nCity: %5$s\nState: %6$s\nZip: %7$s\n",
@@ -636,40 +639,48 @@ public class ShareMyLocationActivity extends Activity {
 		/*
 		 * Set up email activity
 		 */
-		Intent intent = new Intent(Intent.ACTION_SEND);
-		intent.setType("text/plain");
-		intent.putExtra(Intent.EXTRA_EMAIL  , new String[]{EMAIL_ADDR});
-		intent.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
+		Intent email_intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+		email_intent.setType("text/plain");
+		email_intent.putExtra(Intent.EXTRA_EMAIL  , new String[]{EMAIL_ADDR});
+		email_intent.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
 		
 		Uri uri=null;
 		String full_path="none";
 		
+		ArrayList<Uri> uri_list = new ArrayList<Uri>();
 		//attach data as attachment or text-body
 		if(file.exists()) {
-			full_path = String.format("file://"+file.getAbsolutePath());
+			m_loc_file_location = file.getAbsolutePath();
+			full_path = String.format("file://"+m_loc_file_location);
 			uri = Uri.parse(full_path);
-			intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+			uri_list.add(uri);
+			//intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
 		} else {
 			//if unable to find file, then send data via text
-			intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
+			email_intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
 		}
 		
 		//attach picture if it exists
 		if(m_picture_location != "") {
 			full_path = String.format("file://"+m_picture_location);
 			uri = Uri.parse(full_path);
-			intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+			uri_list.add(uri);
+			//intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+		}
+		
+		if(uri_list.size()>0) {
+			email_intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uri_list);
 		}
 		
 		/*
 		 * Send email, or catch no email client
 		 */
 		try {
-		    startActivityForResult(Intent.createChooser(intent, "Send mail..."), EMAIL_ACTIVITY_KEY);
+		    startActivityForResult(Intent.createChooser(email_intent, "Send mail..."), EMAIL_ACTIVITY_KEY);
 		} catch (android.content.ActivityNotFoundException ex) {
 			displayMessage("There are no email clients installed.");
 		}
-		displayMessage(full_path);
+		//displayMessage(full_path);
 	 }
 /*
  * TODO: figure out what should be added here
@@ -686,15 +697,15 @@ public class ShareMyLocationActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    switch(item.getItemId()) {
 		     case EXIT_OPTION:
-		    	 displayMessage("you clicked on item "+item.getTitle());
+		    	 //displayMessage("you clicked on item "+item.getTitle());
 		    	 shutdownApp();
 		         return true;
 		     case CLEAR_TEXT_OPTION:
-		    	 displayMessage("you clicked on item "+item.getTitle());
+		    	 //displayMessage("you clicked on item "+item.getTitle());
 		    	 clearAddressForm();
 		         return true;
 		     case OTHER_OPTION:
-		    	 displayMessage("you clicked on item "+item.getTitle() + ": NOT IMPLEMENTED");
+		    	 //displayMessage("you clicked on item "+item.getTitle() + ": NOT IMPLEMENTED");
 		    	 return true;
 		     default:
 		    	 displayMessage("Not sure what you clicked" + item.getItemId());
@@ -748,8 +759,31 @@ public class ShareMyLocationActivity extends Activity {
 		Toast.makeText(ShareMyLocationActivity.this, message,
               Toast.LENGTH_LONG).show();
 	}
-	    
+/*
+ * functions called when app is ending	
+ */
+    private void deleteTempFiles() {
+    	File file = null;
+    	boolean deleted = false;
+    	
+    	if(m_picture_location!="") {
+    		file = new File(m_picture_location);
+    		deleted = file.delete();
+    		if(deleted==false) {
+    			displayMessage("Could not delete pic");
+    		}
+    	}
+    	
+    	if(m_loc_file_location!="") {
+    		file = new File(m_loc_file_location);
+    		deleted = file.delete();
+    		if(deleted==false) {
+    			displayMessage("Could not delete text file");
+    		}
+    	}
+    }
     public void shutdownApp() {
+    	deleteTempFiles();
 		m_locationManager.removeUpdates(m_location_listener);
 
 		this.finish();
