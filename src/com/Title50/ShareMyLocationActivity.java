@@ -267,7 +267,8 @@ public class ShareMyLocationActivity extends Activity {
 //-------------------------------------------------------------------		
 	 protected void getCurrentLocation() {
 
-		progressBar();
+		//TODO need to fix
+		//progressBar();
         Location location = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         String message = "";
