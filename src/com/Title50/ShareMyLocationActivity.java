@@ -118,6 +118,8 @@ public class ShareMyLocationActivity extends Activity {
 	private EditText et_state;
 	private EditText et_zip;
 	
+	//TODO
+	ProgressDialog dialog;
 	
 /*
  * Objects used
@@ -266,7 +268,9 @@ public class ShareMyLocationActivity extends Activity {
 	 protected void getCurrentLocation() {
 
 		//TODO need to fix
-		//progressBar();
+		progressBar();
+		waitForTime();
+		
         Location location = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         String message = "";
@@ -335,18 +339,14 @@ public class ShareMyLocationActivity extends Activity {
 		//progress_bar_timer.schedule(new ProgressBarTask(), wait_time);
 		
 		
-		ProgressDialog dialog;
+		//ProgressDialog dialog;
 		dialog = new ProgressDialog(this);
 	    dialog.setMessage("Waiting For GPS Signal");
 	    //dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 	    //dialog.setMax(wait_time);
 	    dialog.setCancelable(true);
 	    dialog.show();
-	    
-	    show_progess = true;
-	    
-	    waitForTime();
-	    //dialog.dismiss();
+	   
 	}
 	
 	private void waitForTime() {
@@ -354,14 +354,11 @@ public class ShareMyLocationActivity extends Activity {
 		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(new TimerTask() {
 	        public void run() {
-	        	show_progess = false;
+	        	dialog.dismiss();
 	            cancel();
 	            
 	        }
 	    }, wait_time, wait_time);
-		while(show_progess) {
-			
-		}
 	}
 	//-------------------------------------------------------------------
  	//Insert values into form if they exist, allow user to modify
