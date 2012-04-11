@@ -52,7 +52,7 @@ import android.widget.Toast;
 public class ShareMyLocationActivity extends Activity {
 	//Activity onResult Keys
 	private static final int EMAIL_ACTIVITY_KEY = 51212;
-	private static final int TAKE_PICTURE_KEY = 153256;
+	private static final int CAMERA_ACTIVITY_KEY = 98345;
 	private static final int SETTINGS_ACTIVITY_KEY = 13683;
 	
 	//Option menu option keys
@@ -75,8 +75,8 @@ public class ShareMyLocationActivity extends Activity {
 	private final int SECONDS_TO_MILLISECONDS = 1000;
 	
 	private String m_loc_file_location;
-	private String m_picture_location;
-	private final String EMAIL_ADDR = "asdantius5@gmail.com";
+	//private String m_picture_location;
+	private final String EMAIL_ADDR = "aabGIS2012@gmail.com";
 	
 	
 	
@@ -124,9 +124,12 @@ public class ShareMyLocationActivity extends Activity {
 	private EditText et_zip;
 	
 	
-	//location listener for GPS
+/*
+ * Objects used
+ */
 	protected MyLocationListener m_location_listener;
 
+	AndroidCamera m_camera;
 	/*
 	 * First function called! 
 	 * Will display loading screen while determining if GPS available
@@ -153,7 +156,6 @@ public class ShareMyLocationActivity extends Activity {
         m_longitude= -99999;
         show_progess = false;
         
-        m_picture_location = "";
         m_loc_file_location = "";
         
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -169,6 +171,7 @@ public class ShareMyLocationActivity extends Activity {
 
         m_geocoder = new Geocoder(this, Locale.ENGLISH);
         
+        m_camera = new AndroidCamera();
         /*
          * Determine if GPS enabled: perform getLocation/addressform/alertdialog
          */
@@ -184,15 +187,10 @@ public class ShareMyLocationActivity extends Activity {
 				 	checkGpsStatus(false);
 				 	break;
 			 //TODO: Picture result
-			 case TAKE_PICTURE_KEY:
+			 case CAMERA_ACTIVITY_KEY:
 				 	//check if picture recieved
-				 	//displayMessage("Picture result: " + resultCode);
-				 	if (resultCode != 0) {
-				 		//TODO: see if can get picture name from "data" parameter
-				 	} else {
-				 		//reset picture location
-				 		m_picture_location = "";
-				 	}
+				 	displayMessage("Picture result: " + resultCode);
+				 	m_camera.setCameraResult(resultCode);
 				 	break;
 			case EMAIL_ACTIVITY_KEY:
 				 	String message = "";
@@ -336,6 +334,7 @@ public class ShareMyLocationActivity extends Activity {
         	}
     }  
 	 
+	//TODO: Fix
 	private void progressBar() {
 		/*
 		 * have spinner come up to indicate getting GPS location
@@ -348,7 +347,7 @@ public class ShareMyLocationActivity extends Activity {
 		//progress_bar_timer = new Timer();;
 		//progress_bar_timer.schedule(new ProgressBarTask(), wait_time);
 		
-		//TODO: GPS_WAIT_TIME
+		
 		ProgressDialog dialog;
 		dialog = new ProgressDialog(this);
 	    dialog.setMessage("Waiting For GPS Signal");
@@ -511,7 +510,7 @@ public class ShareMyLocationActivity extends Activity {
 				 * send email with location data
 				 */
         		//if pic exists, then ask if they want it replaced
-        		if(m_picture_location!="") {
+        		if(m_camera.getPictureLocation()!="") {
         			changePictureDialog();
         		} else {
         			takePicture();
@@ -546,20 +545,7 @@ public class ShareMyLocationActivity extends Activity {
 	}
 	private void takePicture() {
 		
-		String file_name = "aab_picture_" + System.currentTimeMillis() + ".jpeg";
-		String home_dir = "/sdcard";
-		File dir=null;
-		String dir_name =  home_dir +"/AAB_FILES";
-		dir = new File(dir_name);
-		if(dir.mkdirs() == false) {
-			//already created
-		}
-		File picture_file = new File(dir_name, file_name);
-		
-		m_picture_location = picture_file.getAbsolutePath();
-		Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-	    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(picture_file));
-	    startActivityForResult(takePictureIntent, TAKE_PICTURE_KEY);
+		startActivityForResult(m_camera.takePicture(), m_camera.getActivityKey());
 	}
 /*
  * Function relating to EMAIL
@@ -660,9 +646,10 @@ public class ShareMyLocationActivity extends Activity {
 			email_intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
 		}
 		
+		String picture_location = m_camera.getPictureLocation();
 		//attach picture if it exists
-		if(m_picture_location != "") {
-			full_path = String.format("file://"+m_picture_location);
+		if(picture_location != "") {
+			full_path = String.format("file://"+picture_location);
 			uri = Uri.parse(full_path);
 			uri_list.add(uri);
 			//intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
@@ -766,8 +753,9 @@ public class ShareMyLocationActivity extends Activity {
     	File file = null;
     	boolean deleted = false;
     	
-    	if(m_picture_location!="") {
-    		file = new File(m_picture_location);
+    	String pic_file_name = m_camera.getPictureLocation();
+    	if(pic_file_name!="") {
+    		file = new File(pic_file_name);
     		deleted = file.delete();
     		if(deleted==false) {
     			displayMessage("Could not delete pic");
