@@ -2,25 +2,19 @@ package com.Title50;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.provider.Settings;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import android.hardware.Camera;
 import android.location.Address;
 import android.location.Geocoder;
 
@@ -61,24 +55,25 @@ public class ShareMyLocationActivity extends Activity {
 	private static final int OTHER_OPTION = 10;
 	
 	//These are keys relating to email and location settings activites
-	private final String ADDR_BUILDING = "BUILDING_KEY";
-	private final String ADDR_STREET = "STREET_KEY";
-	private final String ADDR_CITY = "CITY_KEY";
-	private final String ADDR_STATE = "STATE_KEY";
-	private final String ADDR_ZIP = "ZIP_KEY";
-	private final String ADDR_LONG = "LONG_KEY";
-	private final String ADDR_LAT ="LAT_KEY";
 	
-	private Timer progress_bar_timer;
+	/*
+	private static final String ADDR_BUILDING = "BUILDING_KEY";
+	private static final String ADDR_STREET = "STREET_KEY";
+	private static final String ADDR_CITY = "CITY_KEY";
+	private static final String ADDR_STATE = "STATE_KEY";
+	private static final String ADDR_ZIP = "ZIP_KEY";
+	private static final String ADDR_LONG = "LONG_KEY";
+	private static final String ADDR_LAT ="LAT_KEY";
+	*/
+	
+	//private Timer progress_bar_timer;
 	private boolean show_progess;
 	private final double GPS_WAIT_TIME = 3.00;
 	private final int SECONDS_TO_MILLISECONDS = 1000;
 	
 	private String m_loc_file_location;
 	//private String m_picture_location;
-	private final String EMAIL_ADDR = "aabGIS2012@gmail.com";
-	
-	
+	//private final String EMAIL_ADDR = "aabGIS2012@gmail.com";
 	
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	 
@@ -129,7 +124,9 @@ public class ShareMyLocationActivity extends Activity {
  */
 	protected MyLocationListener m_location_listener;
 
-	AndroidCamera m_camera;
+	AndroidCamera m_camera_tool;
+	AndroidEmailTool m_email_tool;
+	
 	/*
 	 * First function called! 
 	 * Will display loading screen while determining if GPS available
@@ -171,7 +168,8 @@ public class ShareMyLocationActivity extends Activity {
 
         m_geocoder = new Geocoder(this, Locale.ENGLISH);
         
-        m_camera = new AndroidCamera();
+        m_camera_tool = new AndroidCamera();
+        m_email_tool = new AndroidEmailTool();
         /*
          * Determine if GPS enabled: perform getLocation/addressform/alertdialog
          */
@@ -190,7 +188,7 @@ public class ShareMyLocationActivity extends Activity {
 			 case CAMERA_ACTIVITY_KEY:
 				 	//check if picture recieved
 				 	displayMessage("Picture result: " + resultCode);
-				 	m_camera.setCameraResult(resultCode);
+				 	m_camera_tool.setCameraResult(resultCode);
 				 	break;
 			case EMAIL_ACTIVITY_KEY:
 				 	String message = "";
@@ -255,8 +253,7 @@ public class ShareMyLocationActivity extends Activity {
 	        	       .setNegativeButton("Ignore", new DialogInterface.OnClickListener() {
 	        	           public void onClick(DialogInterface dialog, int id) {
 	        	        	   //just dismiss dialog
-	        	           }
-	        	           
+	        	           }  
 	        	       });
 	        	
 	        	AlertDialog dialog = builder.create();
@@ -299,11 +296,7 @@ public class ShareMyLocationActivity extends Activity {
 					   
 					   /*
 					    * Populate address members
-					    * Number and Street
-					    * City, State, Zip
-
 					    */
-					   String temp = "";
 					   //zip
 					   m_zip = returnedAddress.getPostalCode();
 					   //state
@@ -315,23 +308,17 @@ public class ShareMyLocationActivity extends Activity {
 					   //street
 					   m_street = returnedAddress.getThoroughfare();
 					  
-					   
-
-					  // m_street = returnedAddress.getLocality();
-					  // m_city = returnedAddress.getSubLocality();
 					   message = String.format("Addr: %s", strReturnedAddress.toString());
             	  }
             	  else{
-            		  message = String.format("No Address returned!");
+            		  message = String.format("Error: No Address returned!");
             	  }
-            	 } catch (IOException e) {
-	            	  e.printStackTrace();
-	            	  message = String.format("Cannot get Address Please Enter Manually!");
-	            	  displayMessage(message);
-            	 }
-
-            	 
-        	}
+        	 } catch (IOException e) {
+            	  e.printStackTrace();
+            	  message = String.format("Cannot get Address Please Enter Manually!");
+            	  displayMessage(message);
+        	 } 	 
+    	}
     }  
 	 
 	//TODO: Fix
@@ -510,7 +497,7 @@ public class ShareMyLocationActivity extends Activity {
 				 * send email with location data
 				 */
         		//if pic exists, then ask if they want it replaced
-        		if(m_camera.getPictureLocation()!="") {
+        		if(m_camera_tool.getPictureLocation()!="") {
         			changePictureDialog();
         		} else {
         			takePicture();
@@ -545,7 +532,7 @@ public class ShareMyLocationActivity extends Activity {
 	}
 	private void takePicture() {
 		
-		startActivityForResult(m_camera.takePicture(), m_camera.getActivityKey());
+		startActivityForResult(m_camera_tool.takePicture(), m_camera_tool.getActivityKey());
 	}
 /*
  * Function relating to EMAIL
@@ -622,42 +609,13 @@ public class ShareMyLocationActivity extends Activity {
 		//Create attachment to send with email
 		file = createLocationFile(file_name, dir_name, message);
 		
+		m_loc_file_location = file.getAbsolutePath();
+		String pic_attachment = m_camera_tool.getPictureLocation();
 		/*
 		 * Set up email activity
 		 */
-		Intent email_intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-		email_intent.setType("text/plain");
-		email_intent.putExtra(Intent.EXTRA_EMAIL  , new String[]{EMAIL_ADDR});
-		email_intent.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
 		
-		Uri uri=null;
-		String full_path="none";
-		
-		ArrayList<Uri> uri_list = new ArrayList<Uri>();
-		//attach data as attachment or text-body
-		if(file.exists()) {
-			m_loc_file_location = file.getAbsolutePath();
-			full_path = String.format("file://"+m_loc_file_location);
-			uri = Uri.parse(full_path);
-			uri_list.add(uri);
-			//intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
-		} else {
-			//if unable to find file, then send data via text
-			email_intent.putExtra(Intent.EXTRA_TEXT   , "This was sent from my phone\n" + message);
-		}
-		
-		String picture_location = m_camera.getPictureLocation();
-		//attach picture if it exists
-		if(picture_location != "") {
-			full_path = String.format("file://"+picture_location);
-			uri = Uri.parse(full_path);
-			uri_list.add(uri);
-			//intent.putExtra(android.content.Intent.EXTRA_STREAM, uri);
-		}
-		
-		if(uri_list.size()>0) {
-			email_intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uri_list);
-		}
+		Intent email_intent = m_email_tool.sendEmail(m_loc_file_location, pic_attachment);
 		
 		/*
 		 * Send email, or catch no email client
@@ -753,7 +711,7 @@ public class ShareMyLocationActivity extends Activity {
     	File file = null;
     	boolean deleted = false;
     	
-    	String pic_file_name = m_camera.getPictureLocation();
+    	String pic_file_name = m_camera_tool.getPictureLocation();
     	if(pic_file_name!="") {
     		file = new File(pic_file_name);
     		deleted = file.delete();

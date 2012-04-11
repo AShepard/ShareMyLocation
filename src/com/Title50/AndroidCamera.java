@@ -29,12 +29,19 @@ public class AndroidCamera extends Activity {
 	 */
 	public AndroidCamera() {
 		m_picture_location = "";
+		m_directory =  HOME_DIRECTORY + AAB_DIRECTORY;
 	}
 	
 	//activity intent key, never changes
 	public final int getActivityKey() { return CAMERA_ACTIVITY_KEY; }
 	
-	public String getPictureLocation() { return m_directory+"/"+m_picture_location; }
+	public String getPictureLocation() { 
+		if(m_picture_location!="") {
+			return m_directory+"/"+m_picture_location; 
+		} else {
+			return "";
+		}
+	}
 	
 	
 	//TODO see if need onActivityResult within this class
@@ -42,7 +49,7 @@ public class AndroidCamera extends Activity {
 		
 		m_picture_location = BASE_PICTURE_NAME + System.currentTimeMillis() + PICTURE_EXTENSION;
 		File dir=null;
-		m_directory =  HOME_DIRECTORY + AAB_DIRECTORY;
+		
 		dir = new File(m_directory);
 		if(dir.mkdirs() == false) {
 			//already created
