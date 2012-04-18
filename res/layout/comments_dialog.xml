@@ -11,21 +11,23 @@
         android:inputType="textMultiLine" >
 
         <requestFocus />
-    </EditText>
-    <Button
-        android:id="@+id/b_back"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@+id/editText1"
-        android:text="b_back" />
+    </EditText>
+
     <Button
         android:id="@+id/b_continue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/button1"
-        android:layout_alignTop="@+id/button1"
-        android:layout_toRightOf="@+id/button1"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/et_comments"
         android:text="b_continue" />
+
+    <Button
+        android:id="@+id/b_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/b_continue"
+        android:layout_alignBottom="@+id/b_continue"
+        android:layout_alignParentRight="true"
+        android:text="b_back" />
 
 </RelativeLayout>

@@ -27,8 +27,17 @@ public class CommentsActivity extends Activity {
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND,  
 	            WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
 		
+		final Bundle extras = getIntent().getExtras();
+		
+		if(extras!=null) {
+			m_comments =  (String) extras.getSerializable(COMMENTS);
+	    } else {
+	    	m_comments = "No Comments";
+	    }
+		
+		
 		et_comments = (EditText)findViewById(R.id.et_comments); 
-		et_comments.setText("No Comments");
+		et_comments.setText(m_comments);
 		
 		b_continue = (Button)findViewById(R.id.b_continue); 
 		b_back = (Button)findViewById(R.id.b_back); 
@@ -38,13 +47,10 @@ public class CommentsActivity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				/*
-				 * save comments, go to email
+				 * send email
 				 */
-				Intent return_intent = new Intent();
-				m_comments = et_comments.getText().toString();;
-				return_intent.putExtra(COMMENTS, m_comments);
-				setResult(LAUNCH_EMAIL);
-				finish();
+				
+				endComments(LAUNCH_EMAIL);
 			}
         });
 		
@@ -53,11 +59,23 @@ public class CommentsActivity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				/*
-				 * update users location
+				 * continue editing
 				 */
-				setResult(CONTINUE_EDITING);
-				finish();
+				endComments(CONTINUE_EDITING);
 			}
         });
+	}
+	
+	public void endComments(int result_code) {
+		/*
+		 * save comments
+		 * return with given result code
+		 */
+		
+		Intent return_intent = new Intent();
+		m_comments = et_comments.getText().toString();;
+		return_intent.putExtra(COMMENTS, m_comments);
+		setResult(result_code, return_intent);
+		finish();
 	}
 }

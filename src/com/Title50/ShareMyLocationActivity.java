@@ -50,6 +50,9 @@ public class ShareMyLocationActivity extends Activity {
 	private static final int SETTINGS_ACTIVITY_KEY = 13683;
 	private static final int COMMENTS_ACTIVITY_KEY = 76849;
 	
+	//putExtra keys for intents
+	protected final String COMMENTS = "COMMENTS";
+	
 	//Option menu option keys
 	private static final int EXIT_OPTION = 1;
 	private static final int CLEAR_TEXT_OPTION = 2;
@@ -109,6 +112,8 @@ public class ShareMyLocationActivity extends Activity {
 	private String m_state;
 	private String m_city;
 	private String m_zip;
+	
+	private String m_comments;
 
 	private TextView tv_latitude;
 	private TextView tv_longitude;
@@ -154,6 +159,8 @@ public class ShareMyLocationActivity extends Activity {
         m_latitude = -99999;
         m_longitude= -99999;
         
+        m_comments = "No Comments";
+        
         m_loc_file_location = "";
         
         m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -196,6 +203,7 @@ public class ShareMyLocationActivity extends Activity {
 				 	String message = "";
 				 	if(resultCode==RESULT_CANCELED) {
 				 		message = String.format("Email failed: %1$s",resultCode);
+				 		
 				 	} else {
 				 		message = String.format("Email succeeded: %1$s",resultCode);
 				 		shutdownApp();
@@ -205,10 +213,15 @@ public class ShareMyLocationActivity extends Activity {
 				 	
 				 	break;
 			case COMMENTS_ACTIVITY_KEY:
+					//store comments
+					if(data!=null) {
+			 			m_comments = data.getExtras().getString(COMMENTS);
+			 		}
+					
 					if(resultCode==1) {
-						displayMessage("Time to send email...");
+						displayMessage("Time to send email..." + m_comments);
 					} else {
-						displayMessage("Continue Editing");
+						displayMessage("Continue Editing" + m_comments);
 					}
 			default:
 				 	//UNKNOWN Activity started
@@ -546,8 +559,9 @@ public class ShareMyLocationActivity extends Activity {
  * Function relating to EMAIL
  */
 	private void continueToEmail() {
-		Intent myIntent = new Intent( "com.Title50.COMMENTS");
- 	    startActivityForResult(myIntent, COMMENTS_ACTIVITY_KEY);
+		Intent comment_intent = new Intent( "com.Title50.COMMENTS");
+		comment_intent.putExtra(COMMENTS, m_comments);
+ 	    startActivityForResult(comment_intent, COMMENTS_ACTIVITY_KEY);
 		/*
 		AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
      	builder.setMessage("Are you sure you want to continue?")
