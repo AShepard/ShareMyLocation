@@ -1,91 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical" >
-    <TextView
-        android:id="@+id/tv_latitude"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
-    <TextView
-        android:id="@+id/tv_longitude"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
-    <TextView
-        android:id="@+id/tv_bldg_num"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Building Number" />
-    <EditText
-        android:id="@+id/et_bldg_num"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10" />
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroller"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:fillViewport="true" >
     
-	<TextView
-        android:id="@+id/tv_street"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Street" />
-    <EditText
-        android:id="@+id/et_street"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10" />
-    
-	<TextView
-        android:id="@+id/tv_city"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="City" />
-    <EditText
-        android:id="@+id/et_city"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10" />
-
-    <TextView
-        android:id="@+id/tv_state"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="State" />
-    <EditText
-        android:id="@+id/et_state"
-        android:layout_width="180dp"
-        android:layout_height="wrap_content"
-        android:ems="10" />
-
-    <TextView
-        android:id="@+id/tv_zip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Zip" />
-
-    <EditText
-        android:id="@+id/et_zip"
-        android:layout_width="180dp"
-        android:layout_height="wrap_content"
-        android:ems="10" >
-
-        <requestFocus />
-    </EditText>
-    <Button
-        android:id="@+id/b_take_picture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Take a picture!" />
-    <Button
-        android:id="@+id/b_update_location"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Update GPS Location" />
-	<Button
-        android:id="@+id/b_send_email"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Continue (to email)" />
-    
-
-</LinearLayout>
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:orientation="vertical" >
+	    <TextView
+	        android:id="@+id/tv_latitude"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="" />
+	    <TextView
+	        android:id="@+id/tv_longitude"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="" />
+	    <TextView
+	        android:id="@+id/tv_bldg_num"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Building Number" />
+	    <EditText
+	        android:id="@+id/et_bldg_num"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:ems="10" />
+	    
+		<TextView
+	        android:id="@+id/tv_street"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Street" />
+	    <EditText
+	        android:id="@+id/et_street"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:ems="10" />
+	    
+		<TextView
+	        android:id="@+id/tv_city"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="City" />
+	    <EditText
+	        android:id="@+id/et_city"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:ems="10" />
+	
+	    <TextView
+	        android:id="@+id/tv_state"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="State" />
+	    <EditText
+	        android:id="@+id/et_state"
+	        android:layout_width="180dp"
+	        android:layout_height="wrap_content"
+	        android:ems="10" />
+	
+	    <TextView
+	        android:id="@+id/tv_zip"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Zip" />
+	
+	    <EditText
+	        android:id="@+id/et_zip"
+	        android:layout_width="180dp"
+	        android:layout_height="wrap_content"
+	        android:ems="10" >
+	
+	        <requestFocus />
+	    </EditText>
+	    <Button
+	        android:id="@+id/b_take_picture"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Take a picture!" />
+	    <Button
+	        android:id="@+id/b_update_location"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Update GPS Location" />
+		<Button
+	        android:id="@+id/b_send_email"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Continue (to email)" />
+	    
+	
+	</LinearLayout>
+</ScrollView>

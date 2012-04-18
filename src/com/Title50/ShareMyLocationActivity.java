@@ -67,8 +67,7 @@ public class ShareMyLocationActivity extends Activity {
 	*/
 	
 	//private Timer progress_bar_timer;
-	private boolean show_progess;
-	private final double GPS_WAIT_TIME = 3.00;
+	private final double GPS_WAIT_TIME = 1.50;
 	private final int SECONDS_TO_MILLISECONDS = 1000;
 	
 	private String m_loc_file_location;
@@ -120,7 +119,7 @@ public class ShareMyLocationActivity extends Activity {
 	
 	//TODO
 	ProgressDialog dialog;
-	
+	private Timer m_timer;
 /*
  * Objects used
  */
@@ -146,14 +145,13 @@ public class ShareMyLocationActivity extends Activity {
          */
         m_bldg_num = "";
         m_street ="";
-        m_state ="";
-        m_city ="";
-        m_zip ="";
+        m_state ="CA";
+        m_city ="Goleta";
+        m_zip ="93117";
         m_lat_str = "";
         m_long_str = "";
         m_latitude = -99999;
         m_longitude= -99999;
-        show_progess = false;
         
         m_loc_file_location = "";
         
@@ -184,12 +182,13 @@ public class ShareMyLocationActivity extends Activity {
 		 switch(requestCode) {
 			 case SETTINGS_ACTIVITY_KEY:
 				 	//user possibly changed GPS location
-				 	checkGpsStatus(false);
+				 	updateLocation();
+				 	
 				 	break;
 			 //TODO: Picture result
 			 case CAMERA_ACTIVITY_KEY:
 				 	//check if picture recieved
-				 	displayMessage("Picture result: " + resultCode);
+				 	//displayMessage("Picture result: " + resultCode);
 				 	m_camera_tool.setCameraResult(resultCode);
 				 	break;
 			case EMAIL_ACTIVITY_KEY:
@@ -212,7 +211,7 @@ public class ShareMyLocationActivity extends Activity {
 	 
 	 private void checkGpsStatus(boolean runDialog) {
 		 if(m_locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER )) {
-			 updateLocation(true);
+			 updateLocation();
 		 } else {
 			 if(runDialog) {
 				 promptUserForGPS();
@@ -224,13 +223,15 @@ public class ShareMyLocationActivity extends Activity {
 	 /*
 	 * This is called if user selects to update GPS
 	 */
-	 private void updateLocation(boolean insertAddress) {
+	 private void updateLocation() {
 		/*
 		 * Updates GPS location
 		 * then changes address fields
 		 */
+     	//m_timer.cancel();
 		getCurrentLocation();
 		fillAddressForm();
+		//dialog.dismiss();
 	 }
 	 
 	 
@@ -268,9 +269,9 @@ public class ShareMyLocationActivity extends Activity {
 	 protected void getCurrentLocation() {
 
 		//TODO need to fix
-		progressBar();
-		waitForTime();
-		
+		//progressBar();
+		//waitForTime();
+		 
         Location location = m_locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
         String message = "";
@@ -322,6 +323,8 @@ public class ShareMyLocationActivity extends Activity {
             	  message = String.format("Cannot get Address Please Enter Manually!");
             	  displayMessage(message);
         	 } 	 
+    	} else {
+    		displayMessage("Error getting Location");
     	}
     }  
 	 
@@ -347,18 +350,19 @@ public class ShareMyLocationActivity extends Activity {
 	    dialog.setCancelable(true);
 	    dialog.show();
 	   
+	    waitForTime();
 	}
 	
 	private void waitForTime() {
 		int wait_time = (int)GPS_WAIT_TIME * SECONDS_TO_MILLISECONDS;
-		Timer timer = new Timer();
-		timer.scheduleAtFixedRate(new TimerTask() {
+		m_timer = new Timer();
+		m_timer.scheduleAtFixedRate(new TimerTask() {
 	        public void run() {
-	        	dialog.dismiss();
-	            cancel();
-	            
+	        	updateLocation();
 	        }
+	        
 	    }, wait_time, wait_time);
+	
 	}
 	//-------------------------------------------------------------------
  	//Insert values into form if they exist, allow user to modify
@@ -663,10 +667,10 @@ public class ShareMyLocationActivity extends Activity {
 
         public void onLocationChanged(Location location) {
             String message = String.format(
-                    "New Location \n Longitude: %1$s \n Latitude: %2$s",
+            		"New Location \n Longitude: %1$s \n Latitude: %2$s",
                     location.getLongitude(), location.getLatitude()
             );
-           // displayMessage(message);
+            //displayMessage(message);
         }
 
         public void onStatusChanged(String s, int i, Bundle b) {

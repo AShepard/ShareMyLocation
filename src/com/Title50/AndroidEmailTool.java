@@ -39,7 +39,7 @@ public class AndroidEmailTool extends Activity{
 		 * Set up email activity
 		 */
 		Intent email_intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-		email_intent.setType("text/plain");
+		email_intent.setType("message/rfc822");
 		email_intent.putExtra(Intent.EXTRA_EMAIL  , new String[]{EMAIL_ADDR});
 		email_intent.putExtra(Intent.EXTRA_SUBJECT, "Android Email Test");
 		
