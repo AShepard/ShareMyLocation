@@ -28,9 +28,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="CommentsActivity" 
+        <activity android:name=".CommentsActivity" 
           android:label="My Activity" 
-          android:theme="@android:style/Theme.Dialog"/>
+          android:theme="@android:style/Theme.Dialog">
+          <intent-filter>
+                <action android:name="com.Title50.COMMENTS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+         </activity>
     </application>
 	
 </manifest>

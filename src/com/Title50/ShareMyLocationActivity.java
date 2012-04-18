@@ -48,6 +48,7 @@ public class ShareMyLocationActivity extends Activity {
 	private static final int EMAIL_ACTIVITY_KEY = 51212;
 	private static final int CAMERA_ACTIVITY_KEY = 98345;
 	private static final int SETTINGS_ACTIVITY_KEY = 13683;
+	private static final int COMMENTS_ACTIVITY_KEY = 76849;
 	
 	//Option menu option keys
 	private static final int EXIT_OPTION = 1;
@@ -203,7 +204,13 @@ public class ShareMyLocationActivity extends Activity {
 				 	displayMessage(message);
 				 	
 				 	break;
-			 default:
+			case COMMENTS_ACTIVITY_KEY:
+					if(resultCode==1) {
+						displayMessage("Time to send email...");
+					} else {
+						displayMessage("Continue Editing");
+					}
+			default:
 				 	//UNKNOWN Activity started
 				 	break;
 		 }
@@ -539,14 +546,17 @@ public class ShareMyLocationActivity extends Activity {
  * Function relating to EMAIL
  */
 	private void continueToEmail() {
+		Intent myIntent = new Intent( "com.Title50.COMMENTS");
+ 	    startActivityForResult(myIntent, COMMENTS_ACTIVITY_KEY);
+		/*
 		AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
      	builder.setMessage("Are you sure you want to continue?")
      	       .setCancelable(false)
      	       .setPositiveButton("Continue to send attachment via email", new DialogInterface.OnClickListener() {
      	           public void onClick(DialogInterface dialog, int id) {
-     	        	  /*
-     	        	   * User is directed to comments section
-     	        	   */
+     	        	  
+     	        	   // User is directed to comments section
+     	        	   
      	        	   sendEmail();
      	           }
      	       })
@@ -559,6 +569,9 @@ public class ShareMyLocationActivity extends Activity {
      	
      	AlertDialog dialog = builder.create();
      	dialog.show();
+     	
+     	*/
+		
 	 }
 	
 	private File createLocationFile(String file_name, String dir_name, String message) {
