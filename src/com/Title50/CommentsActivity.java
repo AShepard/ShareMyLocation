@@ -3,6 +3,7 @@ package com.Title50;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
@@ -35,7 +36,6 @@ public class CommentsActivity extends Activity {
 	    	m_comments = "No Comments";
 	    }
 		
-		
 		et_comments = (EditText)findViewById(R.id.et_comments); 
 		et_comments.setText(m_comments);
 		
@@ -64,6 +64,16 @@ public class CommentsActivity extends Activity {
 				endComments(CONTINUE_EDITING);
 			}
         });
+	}
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event)
+	{
+	    if ((keyCode == KeyEvent.KEYCODE_BACK))
+	    {
+	    	endComments(CONTINUE_EDITING);
+	    }
+	    return super.onKeyDown(keyCode, event);
 	}
 	
 	public void endComments(int result_code) {

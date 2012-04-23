@@ -8,7 +8,7 @@ import android.content.Intent;
 import android.net.Uri;
 
 public class AndroidEmailTool extends Activity{
-	private final String EMAIL_ADDR = "aabGIS2012@gmail.com";
+	private final String EMAIL_ADDR = "graffiti176c@gmail.com";
 	
 	private String m_text_file;
 	private String m_picture_file;

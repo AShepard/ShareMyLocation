@@ -8,6 +8,7 @@ import android.provider.Settings;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.List;
@@ -75,8 +76,6 @@ public class ShareMyLocationActivity extends Activity {
 	private final int SECONDS_TO_MILLISECONDS = 1000;
 	
 	private String m_loc_file_location;
-	//private String m_picture_location;
-	//private final String EMAIL_ADDR = "aabGIS2012@gmail.com";
 	
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1; // in Meters
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 10000; // in Milliseconds	 
@@ -112,6 +111,16 @@ public class ShareMyLocationActivity extends Activity {
 	private String m_state;
 	private String m_city;
 	private String m_zip;
+	
+	private String m_lat_str_col_name;
+	private String m_long_str_col_name;
+	
+	private String m_bldg_num_col_name;
+	private String m_street_col_name;
+	private String m_state_col_name;
+	private String m_city_col_name;
+	private String m_zip_col_name;
+	private String m_comments_col_name;
 	
 	private String m_comments;
 
@@ -159,6 +168,18 @@ public class ShareMyLocationActivity extends Activity {
         m_latitude = -99999;
         m_longitude= -99999;
         
+        /*
+         * CSV column names
+         */
+        m_lat_str_col_name = "Latitude";
+    	m_long_str_col_name = "Latitude";
+        m_bldg_num_col_name = "Latitude";
+    	m_street_col_name = "Latitude";
+    	m_state_col_name = "Latitude";
+    	m_city_col_name = "Latitude";
+    	m_zip_col_name = "Latitude";
+    	m_comments_col_name = "Latitude";
+        
         m_comments = "No Comments";
         
         m_loc_file_location = "";
@@ -193,10 +214,8 @@ public class ShareMyLocationActivity extends Activity {
 				 	updateLocation();
 				 	
 				 	break;
-			 //TODO: Picture result
 			 case CAMERA_ACTIVITY_KEY:
-				 	//check if picture recieved
-				 	//displayMessage("Picture result: " + resultCode);
+				 	//check if picture received
 				 	m_camera_tool.setCameraResult(resultCode);
 				 	break;
 			case EMAIL_ACTIVITY_KEY:
@@ -219,9 +238,10 @@ public class ShareMyLocationActivity extends Activity {
 			 		}
 					
 					if(resultCode==1) {
-						displayMessage("Time to send email..." + m_comments);
+						//displayMessage("Time to send email..." + m_comments);
+						sendEmail();
 					} else {
-						displayMessage("Continue Editing" + m_comments);
+						//displayMessage("Continue Editing" + m_comments);
 					}
 			default:
 				 	//UNKNOWN Activity started
@@ -433,24 +453,40 @@ public class ShareMyLocationActivity extends Activity {
         }
          
 	     if(m_latitude<=180 && m_latitude >=-180) {
-	     	m_lat_str = String.format("Latitude: %1$s", m_latitude);
+	     	m_lat_str = String.format("%1$s", m_latitude);
 	     } else {
-	     	m_lat_str = String.format("Latitude: unknown");
+	     	m_lat_str = String.format("unknown");
 	     }
 	     if(m_longitude<=180 && m_longitude >=-180) {
-	     	m_long_str = String.format("Longitude: %1$s", m_longitude);
+	     	m_long_str = String.format("%1$s", m_longitude);
 	     } else {
-	     	m_long_str = String.format("Longitude: unknown");
+	     	m_long_str = String.format("unknown");
 	     }
          
-         tv_longitude.setText(m_long_str);
-         tv_latitude.setText(m_lat_str);
+         tv_longitude.setText("Longitude: "+m_long_str);
+         tv_latitude.setText("Latitude: "+m_lat_str);
          
          et_bldg_num.setText(m_bldg_num);
          et_street.setText(m_street);
          et_city.setText(m_city);
          et_state.setText(m_state);
          et_zip.setText(m_zip);
+	}
+	
+	protected void storeAddressFields() {
+		/*
+		 * For each address field
+		 */
+		
+		m_long_str = tv_longitude.getText().toString();
+		m_lat_str = tv_latitude.getText().toString();
+        
+		m_bldg_num = et_bldg_num.getText().toString();
+		m_street = et_street.getText().toString();
+		m_city = et_city.getText().toString();
+		m_state = et_state.getText().toString();
+		m_zip = et_zip.getText().toString();
+        
 	}
 	/*
 	 * Display address form
@@ -562,29 +598,7 @@ public class ShareMyLocationActivity extends Activity {
 		Intent comment_intent = new Intent( "com.Title50.COMMENTS");
 		comment_intent.putExtra(COMMENTS, m_comments);
  	    startActivityForResult(comment_intent, COMMENTS_ACTIVITY_KEY);
-		/*
-		AlertDialog.Builder builder = new AlertDialog.Builder(MY_CONTEXT);
-     	builder.setMessage("Are you sure you want to continue?")
-     	       .setCancelable(false)
-     	       .setPositiveButton("Continue to send attachment via email", new DialogInterface.OnClickListener() {
-     	           public void onClick(DialogInterface dialog, int id) {
-     	        	  
-     	        	   // User is directed to comments section
-     	        	   
-     	        	   sendEmail();
-     	           }
-     	       })
-     	       .setNegativeButton("Edit information", new DialogInterface.OnClickListener() {
-     	           public void onClick(DialogInterface dialog, int id) {
-     	        	   //do nothing, dismiss dialog
-     	           }
-     	           
-     	       });
-     	
-     	AlertDialog dialog = builder.create();
-     	dialog.show();
-     	
-     	*/
+
 		
 	 }
 	
@@ -618,23 +632,88 @@ public class ShareMyLocationActivity extends Activity {
 		 
 		 return file;
 	 }
-	//TODO: figure out how to attach 2 files
+	
+	private String generateCsvFile()
+	{
+		/*
+		 * Create the CSV formatted output file
+		 */
+		//TODO fill in appends
+		String message = "";
+		
+		/*
+		 * Table column names
+		 */
+		message = message.concat(m_long_str_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_lat_str_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_bldg_num_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_street_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_city_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_state_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_zip_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_comments_col_name);
+		message = message.concat(", ");
+		message = message.concat("\n");
+	    /*
+	     * Table values 
+	     */
+		message = message.concat(m_long_str);
+		message = message.concat(", ");
+		message = message.concat(m_lat_str);
+		message = message.concat(", ");
+		message = message.concat(m_bldg_num);
+		message = message.concat(", ");
+		message = message.concat(m_street);
+		message = message.concat(", ");
+		message = message.concat(m_city);
+		message = message.concat(", ");
+		message = message.concat(m_state);
+		message = message.concat(", ");
+		message = message.concat(m_zip);
+		message = message.concat(", ");
+		message = message.concat(m_comments);
+		
+		
+		return message;
+	 }
+	
 	 private void sendEmail() {
 		 
 		/*
-		 * Create attachment file
-		 * then attach file to email and send
+		 * Create attachment files
+		 * then attach files to email and send
 		 */
 		File file = null; 
 		String message = "";
-		//TODO change based on date and location
-		String file_name = "location_results_" + System.currentTimeMillis() +".txt";
-		String dir_name = "/AAB_FILES";
-		message = String.format(
+		
+		/*
+		 * Update the comments field members from the textbox
+		 */
+		storeAddressFields();
+		
+		
+		//TODO change based on date
+		String file_name = "graffiti_" + System.currentTimeMillis() +".csv";
+		String dir_name = "/Graffiti Files";
+		/*
+		 message = String.format(
 					"COMMENTS: \n\n\nLat: %1$s\nLong: %2$s\nBuilding: %3$s\nStreet: %4$s\nCity: %5$s\nState: %6$s\nZip: %7$s\n",
 					m_latitude, m_longitude, m_bldg_num, m_street, m_city, m_state, m_zip);
-		
+		*/
 		//Create attachment to send with email
+		
+		message = generateCsvFile();
+		if(message=="") {
+			message = "Error";
+			displayMessage("ERROR");
+		}
 		file = createLocationFile(file_name, dir_name, message);
 		
 		m_loc_file_location = file.getAbsolutePath();
@@ -656,7 +735,6 @@ public class ShareMyLocationActivity extends Activity {
 		//displayMessage(full_path);
 	 }
 /*
- * TODO: figure out what should be added here
  * Options Menu:
  * allows user to exit
  */
