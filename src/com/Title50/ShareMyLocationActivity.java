@@ -22,6 +22,9 @@ import android.location.Geocoder;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -31,6 +34,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,6 +54,10 @@ public class ShareMyLocationActivity extends Activity {
 	private static final int CAMERA_ACTIVITY_KEY = 98345;
 	private static final int SETTINGS_ACTIVITY_KEY = 13683;
 	private static final int COMMENTS_ACTIVITY_KEY = 76849;
+	
+	//thumbnail
+	private static int THUMBNAIL_HEIGHT = 48;
+	private static int THUMBNAIL_WIDTH = 66;
 	
 	//putExtra keys for intents
 	protected final String COMMENTS = "COMMENTS";
@@ -111,16 +119,18 @@ public class ShareMyLocationActivity extends Activity {
 	private String m_state;
 	private String m_city;
 	private String m_zip;
+	private String m_type;
 	
 	private String m_lat_str_col_name;
 	private String m_long_str_col_name;
 	
-	private String m_bldg_num_col_name;
-	private String m_street_col_name;
+	private String m_address_col_name;
 	private String m_state_col_name;
 	private String m_city_col_name;
 	private String m_zip_col_name;
 	private String m_comments_col_name;
+	private String m_date_col_name;
+	private String m_type_col_name;
 	
 	private String m_comments;
 
@@ -132,6 +142,7 @@ public class ShareMyLocationActivity extends Activity {
 	private EditText et_state;
 	private EditText et_zip;
 	
+	private ImageView iv_user_pic;
 	//TODO
 	ProgressDialog dialog;
 	private Timer m_timer;
@@ -153,58 +164,95 @@ public class ShareMyLocationActivity extends Activity {
 	 public void onCreate(Bundle savedInstanceState) {
 		 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.loading_screen);
-
         /*
          * Initialize address fields to null (or out of range)
          */
-        m_bldg_num = "";
-        m_street ="";
-        m_state ="CA";
-        m_city ="Goleta";
-        m_zip ="93117";
-        m_lat_str = "";
-        m_long_str = "";
-        m_latitude = -99999;
-        m_longitude= -99999;
         
-        /*
-         * CSV column names
-         */
-        m_lat_str_col_name = "Latitude";
-    	m_long_str_col_name = "Latitude";
-        m_bldg_num_col_name = "Latitude";
-    	m_street_col_name = "Latitude";
-    	m_state_col_name = "Latitude";
-    	m_city_col_name = "Latitude";
-    	m_zip_col_name = "Latitude";
-    	m_comments_col_name = "Latitude";
-        
-        m_comments = "No Comments";
-        
-        m_loc_file_location = "";
-        
-        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        m_location_listener = new MyLocationListener();
-        
-        m_locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                MINIMUM_TIME_BETWEEN_UPDATES,
-                MINIMUM_DISTANCE_CHANGE_FOR_UPDATES,
-                m_location_listener
-        );
-
-        m_geocoder = new Geocoder(this, Locale.ENGLISH);
-        
-        m_camera_tool = new AndroidCamera();
-        m_email_tool = new AndroidEmailTool();
         /*
          * Determine if GPS enabled: perform getLocation/addressform/alertdialog
          */
+        initialize();
         launchAddressForm();
         
 	 }  
+	 
+	 @Override
+	 public void onConfigurationChanged(Configuration newConfig) {
+	   super.onConfigurationChanged(newConfig);
+	   setContentView(R.layout.address_editor);
+	   
+	   initialize();
+	   fillAddressForm();
+	 }
+	 
+	 protected void initialize() {
+			//Change layout to the address form
+	        setContentView(R.layout.address_editor);
+		   
+	        m_bldg_num = "";
+	        m_street ="";
+	        m_state ="CA";
+	        m_city ="Goleta";
+	        m_zip ="93117";
+	        m_lat_str = "";
+	        m_long_str = "";
+	        m_latitude = -99999;
+	        m_longitude= -99999;
+	        
+	        //TODO implement type of location
+	        m_type="";
+	        
+	        /*
+	         * CSV column names
+	         */
+	        m_lat_str_col_name = "lat";
+	    	m_long_str_col_name = "lng";
+	    	m_date_col_name = "date";
+	    	m_address_col_name = "address";
+	    	m_city_col_name = "city";
+	    	m_type_col_name = "type";
+	    	m_state_col_name = "state";
+	    	m_zip_col_name = "zip";
+	    	m_comments_col_name = "Detail of Location";
+	        
+	        m_comments = "No Comments";
+	        
+	        m_loc_file_location = "";
+	        
+	        m_locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+	        m_location_listener = new MyLocationListener();
+	        
+	        m_locationManager.requestLocationUpdates(
+	                LocationManager.GPS_PROVIDER,
+	                MINIMUM_TIME_BETWEEN_UPDATES,
+	                MINIMUM_DISTANCE_CHANGE_FOR_UPDATES,
+	                m_location_listener
+	        );
+
+	        m_geocoder = new Geocoder(this, Locale.ENGLISH);
+	        
+	        m_camera_tool = new AndroidCamera();
+	        m_email_tool = new AndroidEmailTool();
+	        /*`
+	         * Get the EditTexts and needed TextViews from address form
+	         */
+	        tv_latitude = (TextView) findViewById(R.id.tv_latitude);
+	        tv_longitude = (TextView) findViewById(R.id.tv_longitude);
+	        
+	        et_bldg_num = (EditText) findViewById(R.id.et_bldg_num);
+	        et_street = (EditText) findViewById(R.id.et_street);
+	        et_city = (EditText) findViewById(R.id.et_city);
+	        et_state = (EditText) findViewById(R.id.et_state);
+	        et_zip = (EditText) findViewById(R.id.et_zip);
+	        
+	        //Buttons on page
+	        b_send_email = (Button) findViewById(R.id.b_send_email);
+	        b_update_location = (Button) findViewById(R.id.b_update_location);
+	        b_take_picture = (Button) findViewById(R.id.b_take_picture);
+	        
+	        iv_user_pic = (ImageView) findViewById(R.id.iv_user_pic);
+		}
 	
 	 @Override
 	 protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -217,6 +265,28 @@ public class ShareMyLocationActivity extends Activity {
 			 case CAMERA_ACTIVITY_KEY:
 				 	//check if picture received
 				 	m_camera_tool.setCameraResult(resultCode);
+				 	
+				 	ImageController image_control = new ImageController();
+				 	Bitmap m_bmap = null;
+				 	
+				 	String path = m_camera_tool.getPictureLocation();
+				 	BitmapFactory m_bmap_factory = new BitmapFactory();
+				 	m_bmap = m_bmap_factory.decodeFile(path);
+				 	
+				 	Float width  = new Float(m_bmap.getWidth());
+					Float height = new Float(m_bmap.getHeight());
+					Float ratio = width/height;
+					
+					m_bmap = Bitmap.createScaledBitmap(m_bmap, (int)(THUMBNAIL_HEIGHT*ratio), THUMBNAIL_WIDTH, false);
+
+					int padding = (THUMBNAIL_WIDTH - m_bmap.getWidth())/2;
+					
+					iv_user_pic.setPadding(padding, 0, padding, 0);
+					iv_user_pic.setImageBitmap(m_bmap);
+					
+				 	
+				 	
+				 	
 				 	break;
 			case EMAIL_ACTIVITY_KEY:
 				 	String message = "";
@@ -488,6 +558,8 @@ public class ShareMyLocationActivity extends Activity {
 		m_zip = et_zip.getText().toString();
         
 	}
+	
+	
 	/*
 	 * Display address form
 	 */
@@ -497,28 +569,6 @@ public class ShareMyLocationActivity extends Activity {
 		 * Prompt user to change
 		 * load address info, allow user to edit loc info
 		 */
-		
-        //Change layout to the address form
-        setContentView(R.layout.address_editor);
-	   
-        /*
-         * Get the EditTexts and needed TextViews from address form
-         */
-        tv_latitude = (TextView) findViewById(R.id.tv_latitude);
-        tv_longitude = (TextView) findViewById(R.id.tv_longitude);
-        
-        et_bldg_num = (EditText) findViewById(R.id.et_bldg_num);
-        et_street = (EditText) findViewById(R.id.et_street);
-        et_city = (EditText) findViewById(R.id.et_city);
-        et_state = (EditText) findViewById(R.id.et_state);
-        et_zip = (EditText) findViewById(R.id.et_zip);
-        
-        //Buttons on page
-       // b_exit = (Button) findViewById(R.id.b_exit);
-        b_send_email = (Button) findViewById(R.id.b_send_email);
-        b_update_location = (Button) findViewById(R.id.b_update_location);
-       // b_clear_info = (Button) findViewById(R.id.b_clear_info);
-        b_take_picture = (Button) findViewById(R.id.b_take_picture);
         
         //fill with default values
         fillAddressForm();
@@ -648,11 +698,13 @@ public class ShareMyLocationActivity extends Activity {
 		message = message.concat(", ");
 		message = message.concat(m_lat_str_col_name);
 		message = message.concat(", ");
-		message = message.concat(m_bldg_num_col_name);
+		message = message.concat(m_date_col_name);
 		message = message.concat(", ");
-		message = message.concat(m_street_col_name);
+		message = message.concat(m_address_col_name);
 		message = message.concat(", ");
 		message = message.concat(m_city_col_name);
+		message = message.concat(", ");
+		message = message.concat(m_type_col_name);
 		message = message.concat(", ");
 		message = message.concat(m_state_col_name);
 		message = message.concat(", ");
@@ -661,18 +713,21 @@ public class ShareMyLocationActivity extends Activity {
 		message = message.concat(m_comments_col_name);
 		message = message.concat(", ");
 		message = message.concat("\n");
-	    /*
+	    
+		/*
 	     * Table values 
 	     */
 		message = message.concat(m_long_str);
 		message = message.concat(", ");
 		message = message.concat(m_lat_str);
 		message = message.concat(", ");
-		message = message.concat(m_bldg_num);
+		message = message.concat("date");
 		message = message.concat(", ");
-		message = message.concat(m_street);
+		message = message.concat(m_bldg_num + " " + m_street);
 		message = message.concat(", ");
 		message = message.concat(m_city);
+		message = message.concat(", ");
+		message = message.concat(m_type);
 		message = message.concat(", ");
 		message = message.concat(m_state);
 		message = message.concat(", ");
