@@ -19,7 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/et_comments"
-        android:text="b_continue" />
+        android:text="Send Email" />
 
     <Button
         android:id="@+id/b_back"
@@ -28,6 +28,6 @@
         android:layout_alignBaseline="@+id/b_continue"
         android:layout_alignBottom="@+id/b_continue"
         android:layout_alignParentRight="true"
-        android:text="b_back" />
+        android:text="Back" />
 
 </RelativeLayout>

@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
+
 
 import android.location.Address;
 import android.location.Geocoder;
@@ -28,6 +30,8 @@ import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -55,10 +59,34 @@ public class ShareMyLocationActivity extends Activity {
 	private static final int SETTINGS_ACTIVITY_KEY = 13683;
 	private static final int COMMENTS_ACTIVITY_KEY = 76849;
 	
-	//thumbnail
-	private static int THUMBNAIL_HEIGHT = 48;
-	private static int THUMBNAIL_WIDTH = 66;
+	 /*
+     * CSV column names
+     */
+	private static final String LAT_COL_NAME = "lat";
+	private static final String LONG_COL_NAME = "lng";
+	private static final String DATE_COL_NAME = "date";
+	private static final String ADDR_COL_NAME = "address";
+	private static final String CITY_COL_NAME = "city";
+	private static final String TYPE_COL_NAME = "type";
+	private static final String STATE_COL_NAME = "state";
+	private static final String ZIP_COL_NAME = "zip";
+	private static final String COMMENTS_COL_NAME = "Detail of Location";
 	
+	//constant address attributes
+	private static final String STATE = "CA";
+	private static final String CITY = "GOLETA";
+	private static final String ZIP = "93117";
+	
+	//thumbnail
+	private static final int THUMBNAIL_HEIGHT = 48;
+	private static final int THUMBNAIL_WIDTH = 66;
+	
+	//enum for determining type of location
+	private enum location_type{
+		APARTMENT,
+		HOUSE,
+		PARK
+	}
 	//putExtra keys for intents
 	protected final String COMMENTS = "COMMENTS";
 	
@@ -67,7 +95,7 @@ public class ShareMyLocationActivity extends Activity {
 	private static final int CLEAR_TEXT_OPTION = 2;
 	private static final int OTHER_OPTION = 10;
 	
-	//These are keys relating to email and location settings activites
+	//These are keys relating to email and location settings activities
 	
 	/*
 	private static final String ADDR_BUILDING = "BUILDING_KEY";
@@ -114,36 +142,17 @@ public class ShareMyLocationActivity extends Activity {
 	private String m_lat_str;
 	private String m_long_str;
 	
-	private String m_bldg_num;
-	private String m_street;
-	private String m_state;
-	private String m_city;
-	private String m_zip;
+	private String m_address;
 	private String m_type;
-	
-	private String m_lat_str_col_name;
-	private String m_long_str_col_name;
-	
-	private String m_address_col_name;
-	private String m_state_col_name;
-	private String m_city_col_name;
-	private String m_zip_col_name;
-	private String m_comments_col_name;
-	private String m_date_col_name;
-	private String m_type_col_name;
 	
 	private String m_comments;
 
 	private TextView tv_latitude;
 	private TextView tv_longitude;
-	private EditText et_bldg_num;
-	private EditText et_street;
-	private EditText et_city;
-	private EditText et_state;
-	private EditText et_zip;
+	private EditText et_address;
 	
 	private ImageView iv_user_pic;
-	//TODO
+	//TODO: progress spinner
 	ProgressDialog dialog;
 	private Timer m_timer;
 /*
@@ -153,7 +162,7 @@ public class ShareMyLocationActivity extends Activity {
 
 	AndroidCamera m_camera_tool;
 	AndroidEmailTool m_email_tool;
-	
+	CurrentAddress m_last_addr;
 	/*
 	 * First function called! 
 	 * Will display loading screen while determining if GPS available
@@ -167,53 +176,43 @@ public class ShareMyLocationActivity extends Activity {
         /*
          * Initialize address fields to null (or out of range)
          */
-        
-        /*
-         * Determine if GPS enabled: perform getLocation/addressform/alertdialog
-         */
+        m_last_addr = (CurrentAddress)getLastNonConfigurationInstance();
+        if (m_last_addr == null) {
+        	m_address = "";
+        	m_latitude = -9999;
+        	m_longitude = -9999;
+        } else {
+        	m_address = m_last_addr.getAddr();
+        	m_latitude = m_last_addr.getLat();
+        	m_longitude = m_last_addr.getLong();
+        }
         initialize();
+       
+        
         launchAddressForm();
         
 	 }  
 	 
-	 @Override
-	 public void onConfigurationChanged(Configuration newConfig) {
-	   super.onConfigurationChanged(newConfig);
-	   setContentView(R.layout.address_editor);
-	   
-	   initialize();
-	   fillAddressForm();
-	 }
+
+	 
+	//http://www.devx.com/wireless/Article/40792/1954
+	@Override
+	public Object onRetainNonConfigurationInstance()
+	{
+		CurrentAddress cur_addr = new CurrentAddress(m_address, m_latitude, m_longitude);
+		return cur_addr;
+	}
 	 
 	 protected void initialize() {
 			//Change layout to the address form
-	        setContentView(R.layout.address_editor);
-		   
-	        m_bldg_num = "";
-	        m_street ="";
-	        m_state ="CA";
-	        m_city ="Goleta";
-	        m_zip ="93117";
-	        m_lat_str = "";
-	        m_long_str = "";
-	        m_latitude = -99999;
-	        m_longitude= -99999;
+	        setContentView(R.layout.main);
+	        
+	        m_lat_str = String.format("%1$s", m_latitude);
+	        m_long_str = String.format("%1$s", m_latitude);;
+	        
 	        
 	        //TODO implement type of location
 	        m_type="";
-	        
-	        /*
-	         * CSV column names
-	         */
-	        m_lat_str_col_name = "lat";
-	    	m_long_str_col_name = "lng";
-	    	m_date_col_name = "date";
-	    	m_address_col_name = "address";
-	    	m_city_col_name = "city";
-	    	m_type_col_name = "type";
-	    	m_state_col_name = "state";
-	    	m_zip_col_name = "zip";
-	    	m_comments_col_name = "Detail of Location";
 	        
 	        m_comments = "No Comments";
 	        
@@ -240,11 +239,7 @@ public class ShareMyLocationActivity extends Activity {
 	        tv_latitude = (TextView) findViewById(R.id.tv_latitude);
 	        tv_longitude = (TextView) findViewById(R.id.tv_longitude);
 	        
-	        et_bldg_num = (EditText) findViewById(R.id.et_bldg_num);
-	        et_street = (EditText) findViewById(R.id.et_street);
-	        et_city = (EditText) findViewById(R.id.et_city);
-	        et_state = (EditText) findViewById(R.id.et_state);
-	        et_zip = (EditText) findViewById(R.id.et_zip);
+	        et_address = (EditText) findViewById(R.id.et_address);
 	        
 	        //Buttons on page
 	        b_send_email = (Button) findViewById(R.id.b_send_email);
@@ -252,6 +247,7 @@ public class ShareMyLocationActivity extends Activity {
 	        b_take_picture = (Button) findViewById(R.id.b_take_picture);
 	        
 	        iv_user_pic = (ImageView) findViewById(R.id.iv_user_pic);
+
 		}
 	
 	 @Override
@@ -264,8 +260,10 @@ public class ShareMyLocationActivity extends Activity {
 				 	break;
 			 case CAMERA_ACTIVITY_KEY:
 				 	//check if picture received
-				 	m_camera_tool.setCameraResult(resultCode);
-				 	
+				 	if(resultCode==0) {
+				 		break;
+				 	}
+				 	//TODO: move to own function
 				 	ImageController image_control = new ImageController();
 				 	Bitmap m_bmap = null;
 				 	
@@ -297,8 +295,8 @@ public class ShareMyLocationActivity extends Activity {
 				 		message = String.format("Email succeeded: %1$s",resultCode);
 				 		shutdownApp();
 				 	}
-				 	
-				 	displayMessage(message);
+				 	finish();
+				 	//displayMessage(message);
 				 	
 				 	break;
 			case COMMENTS_ACTIVITY_KEY:
@@ -317,6 +315,20 @@ public class ShareMyLocationActivity extends Activity {
 				 	//UNKNOWN Activity started
 				 	break;
 		 }
+	 }
+	 
+	 //TODO fill this out
+	 private String getTypeStr(location_type type) {
+		 String type_str = "";
+		 switch(type) {
+		 	case APARTMENT:
+		 			type_str = "Apartment";
+		 			break;
+		 	default: type_str = "UNKNOWN";
+		 			break;
+		 }
+		 
+		 return type_str;
 	 }
 	 
 	 private void checkGpsStatus(boolean runDialog) {
@@ -412,16 +424,18 @@ public class ShareMyLocationActivity extends Activity {
 					   /*
 					    * Populate address members
 					    */
-					   //zip
+					   
+					   //TODO:DISPLAY ERROR IF NOT IN CORRECT ZIP, STATE, OR CITY
+					   
+					   /*
 					   m_zip = returnedAddress.getPostalCode();
-					   //state
 					   m_state = returnedAddress.getAdminArea();
-					   //city
 					   m_city = returnedAddress.getLocality();
+					   */
 					   //building num
-					   m_bldg_num = returnedAddress.getSubThoroughfare();
+					   m_address = returnedAddress.getSubThoroughfare();
 					   //street
-					   m_street = returnedAddress.getThoroughfare();
+					   m_address = m_address + " " + returnedAddress.getThoroughfare();
 					  
 					   message = String.format("Addr: %s", strReturnedAddress.toString());
             	  }
@@ -478,12 +492,13 @@ public class ShareMyLocationActivity extends Activity {
  	//Insert values into form if they exist, allow user to modify
  	//-------------------------------------------------------------------
 	private void clearAddressForm() {
-    	m_bldg_num = "";
-    	m_street = "";
+    	m_address = "";
+    	/*
     	m_city = "";
     	m_state = "";
     	m_zip = "";
-         
+        */
+    	
      	m_lat_str = String.format("");
      	m_long_str = String.format("");
      	
@@ -506,12 +521,10 @@ public class ShareMyLocationActivity extends Activity {
 		/*
 		 * if below strings are null, then insert blanks
 		 */
-        if(m_bldg_num == null) {
-        	m_bldg_num = "";
+        if(m_address == null) {
+        	m_address = "";
         }
-        if(m_street == null) {
-        	m_street = "";
-        }
+        /*
         if(m_city == null) {
         	m_city = "";
         }
@@ -520,7 +533,7 @@ public class ShareMyLocationActivity extends Activity {
         }
         if(m_zip == null) {
         	m_zip = "";
-        }
+        }*/
          
 	     if(m_latitude<=180 && m_latitude >=-180) {
 	     	m_lat_str = String.format("%1$s", m_latitude);
@@ -533,14 +546,10 @@ public class ShareMyLocationActivity extends Activity {
 	     	m_long_str = String.format("unknown");
 	     }
          
-         tv_longitude.setText("Longitude: "+m_long_str);
-         tv_latitude.setText("Latitude: "+m_lat_str);
+         tv_longitude.setText(m_long_str);
+         tv_latitude.setText(m_lat_str);
          
-         et_bldg_num.setText(m_bldg_num);
-         et_street.setText(m_street);
-         et_city.setText(m_city);
-         et_state.setText(m_state);
-         et_zip.setText(m_zip);
+         et_address.setText(m_address);
 	}
 	
 	protected void storeAddressFields() {
@@ -551,12 +560,7 @@ public class ShareMyLocationActivity extends Activity {
 		m_long_str = tv_longitude.getText().toString();
 		m_lat_str = tv_latitude.getText().toString();
         
-		m_bldg_num = et_bldg_num.getText().toString();
-		m_street = et_street.getText().toString();
-		m_city = et_city.getText().toString();
-		m_state = et_state.getText().toString();
-		m_zip = et_zip.getText().toString();
-        
+		m_address = et_address.getText().toString();
 	}
 	
 	
@@ -577,7 +581,7 @@ public class ShareMyLocationActivity extends Activity {
         
         b_update_location.setOnClickListener(new OnClickListener() {
 
-			@Override
+        	//@Override
 			public void onClick(View arg0) {
 				/*
 				 * update users location
@@ -588,7 +592,8 @@ public class ShareMyLocationActivity extends Activity {
         
         b_send_email.setOnClickListener(new OnClickListener() {
 
-			@Override
+			//TODO: why are overrides not needed?
+        	//@Override
 			public void onClick(View arg0) {
 				/*
 				 * send email with location data
@@ -598,7 +603,7 @@ public class ShareMyLocationActivity extends Activity {
         });
 		
         b_take_picture.setOnClickListener(new OnClickListener() {
-        	@Override
+        	//@Override
 			public void onClick(View arg0) {
 				/*
 				 * send email with location data
@@ -694,23 +699,23 @@ public class ShareMyLocationActivity extends Activity {
 		/*
 		 * Table column names
 		 */
-		message = message.concat(m_long_str_col_name);
+		message = message.concat(LONG_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_lat_str_col_name);
+		message = message.concat(LAT_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_date_col_name);
+		message = message.concat(DATE_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_address_col_name);
+		message = message.concat(ADDR_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_city_col_name);
+		message = message.concat(CITY_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_type_col_name);
+		message = message.concat(TYPE_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_state_col_name);
+		message = message.concat(STATE_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_zip_col_name);
+		message = message.concat(ZIP_COL_NAME);
 		message = message.concat(", ");
-		message = message.concat(m_comments_col_name);
+		message = message.concat(COMMENTS_COL_NAME);
 		message = message.concat(", ");
 		message = message.concat("\n");
 	    
@@ -723,15 +728,15 @@ public class ShareMyLocationActivity extends Activity {
 		message = message.concat(", ");
 		message = message.concat("date");
 		message = message.concat(", ");
-		message = message.concat(m_bldg_num + " " + m_street);
+		message = message.concat(m_address);
 		message = message.concat(", ");
-		message = message.concat(m_city);
+		message = message.concat(CITY);
 		message = message.concat(", ");
 		message = message.concat(m_type);
 		message = message.concat(", ");
-		message = message.concat(m_state);
+		message = message.concat(STATE);
 		message = message.concat(", ");
-		message = message.concat(m_zip);
+		message = message.concat(ZIP);
 		message = message.concat(", ");
 		message = message.concat(m_comments);
 		
@@ -753,8 +758,7 @@ public class ShareMyLocationActivity extends Activity {
 		 */
 		storeAddressFields();
 		
-		
-		//TODO change based on date
+		//change based on date
 		String file_name = "graffiti_" + System.currentTimeMillis() +".csv";
 		String dir_name = "/Graffiti Files";
 		/*

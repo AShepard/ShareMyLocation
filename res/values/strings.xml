@@ -8,4 +8,17 @@
         <item>Delete</item>
         <item>Send</item>
     </string-array>
+    
+	<string name="Lat">Latitude</string>
+	<string name="Long">Longitude</string>
+	<string name="Location">Get My Location</string>
+	<string name="Address">Address</string>
+	<string name="City">City</string>
+	<string name="State">State</string>
+	<string name="Zip">Zip Code</string>
+	<string name="Picture">Take a Picture</string>
+	<string name="Submit">Submit</string>
+	<string name="DefaultCity">Isla Vista</string>
+	<string name="DefaultState">CA</string>
+	<string name="DefaultZip">93117</string>
 </resources>

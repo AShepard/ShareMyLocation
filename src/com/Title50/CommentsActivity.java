@@ -44,7 +44,7 @@ public class CommentsActivity extends Activity {
 		
 		b_continue.setOnClickListener(new OnClickListener() {
 
-			@Override
+			//@Override
 			public void onClick(View arg0) {
 				/*
 				 * send email
@@ -56,7 +56,7 @@ public class CommentsActivity extends Activity {
 		
 		b_back.setOnClickListener(new OnClickListener() {
 
-			@Override
+			//@Override
 			public void onClick(View arg0) {
 				/*
 				 * continue editing
